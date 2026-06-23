@@ -2,6 +2,8 @@
 
 POC en Rust para implementar y medir ML-DSA segun FIPS 204, con soporte de codificacion PKIX/X.509 segun RFC 9881.
 
+Autor: Lorenzo Ruiz Díaz
+
 ## Objetivo
 
 El objetivo de este repositorio es construir una implementacion auditable y medible de ML-DSA, no una libreria criptografica lista para produccion. La POC debe poder demostrar que coincide con el resultado estandar mediante tamanos exactos, vectores de prueba, rechazo de entradas malformadas, OIDs correctos y benchmarks reproducibles.
@@ -10,7 +12,7 @@ FIPS 204 define el algoritmo ML-DSA. RFC 9881 define como transportar ML-DSA en 
 
 ## Estado
 
-Estado actual: scaffold inicial del crate.
+Estado actual: M0 completo como base del crate.
 
 Ya existe documentacion de trabajo:
 
@@ -19,6 +21,7 @@ Ya existe documentacion de trabajo:
 - `docs/NIST.FIPS.204.pdf`: copia local de FIPS 204.
 - `docs/rfc9881.txt`: copia local de RFC 9881.
 - `docs/CRYSTALS_Dilithium_Clean.md`: contexto tecnico no normativo sobre Dilithium/ML-DSA.
+- `scripts/extract-fips204-text.sh`: genera `tmp/fips204.txt` desde el PDF local usando `pdftotext`.
 
 ## Alcance
 
@@ -39,13 +42,13 @@ Fuera del alcance principal:
 
 ## Fuentes normativas
 
-- FIPS 204, Module-Lattice-Based Digital Signature Standard: https://doi.org/10.6028/NIST.FIPS.204
-- RFC 9881, Algorithm Identifiers for ML-DSA in PKIX: https://datatracker.ietf.org/doc/rfc9881/
+- [FIPS 204, Module-Lattice-Based Digital Signature Standard](https://doi.org/10.6028/NIST.FIPS.204)
+- [RFC 9881, Algorithm Identifiers for ML-DSA in PKIX](https://datatracker.ietf.org/doc/rfc9881/)
 
 Para extraer texto del PDF local:
 
 ```sh
-pdftotext docs/NIST.FIPS.204.pdf /tmp/fips204.txt
+scripts/extract-fips204-text.sh
 ```
 
 ## Estructura esperada
@@ -67,13 +70,17 @@ tests/
 benches/
 ```
 
-## Uso actual
+## Uso
 
-Por ahora el crate solo contiene el scaffold inicial:
+Comandos base del M0:
 
 ```sh
 cargo test
+cargo bench
+cargo test --all-features
 ```
+
+El crate expone por ahora features, tipos y metadata normativa; KeyGen/Sign/Verify se implementan en milestones posteriores.
 
 ## Criterio de exito
 
