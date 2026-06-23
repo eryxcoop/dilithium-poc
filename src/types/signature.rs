@@ -2,7 +2,7 @@
 
 use crate::error::DilithiumResult;
 use crate::params::ParameterSet;
-use crate::types::validation::ensure_len;
+use crate::validation::ensure_len;
 
 /// Raw FIPS 204 signature tagged with its ML-DSA parameter set.
 ///

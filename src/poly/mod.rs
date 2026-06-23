@@ -8,7 +8,6 @@ mod coeffs;
 mod matrix;
 mod ntt;
 mod polynomial;
-mod validation;
 mod vector;
 
 pub use coeffs::Coefficients;

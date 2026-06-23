@@ -9,6 +9,9 @@ use crate::encoding::{bits_to_bytes, bits_to_integer, bytes_to_bits};
 use crate::error::{DilithiumError, DilithiumResult};
 use crate::params::{N, Q};
 use crate::poly::Poly;
+use crate::validation::{
+    ensure_i32_range, ensure_len, ensure_positive_u32_bound, ensure_u32_range,
+};
 
 /// Encodes one polynomial using the `SimpleBitPack` procedure.
 ///
@@ -16,7 +19,7 @@ use crate::poly::Poly;
 ///
 /// The polynomial coefficients are interpreted as unsigned integers.
 pub fn simple_bit_pack(polynomial: &Poly, max_value: u32) -> DilithiumResult<Vec<u8>> {
-    ensure_positive_bound("simple bit pack bound", max_value)?;
+    ensure_positive_u32_bound("simple bit pack bound", max_value)?;
 
     let width = bit_length(max_value);
     let mut bits = Vec::with_capacity(N * width);
@@ -40,7 +43,7 @@ pub fn bit_pack(polynomial: &Poly, a: u32, b: u32) -> DilithiumResult<Vec<u8>> {
     let total = a.checked_add(b).ok_or(DilithiumError::MalformedEncoding(
         "bit pack bounds overflow",
     ))?;
-    ensure_positive_bound("bit pack bound", total)?;
+    ensure_positive_u32_bound("bit pack bound", total)?;
 
     let width = bit_length(total);
     let mut bits = Vec::with_capacity(N * width);
@@ -60,7 +63,7 @@ pub fn bit_pack(polynomial: &Poly, a: u32, b: u32) -> DilithiumResult<Vec<u8>> {
 /// This follows FIPS 204 Algorithm 18 with an additional conformance check for
 /// malformed inputs: every decoded value must lie in `[0, max_value]`.
 pub fn simple_bit_unpack(bytes: &[u8], max_value: u32) -> DilithiumResult<Poly> {
-    ensure_positive_bound("simple bit unpack bound", max_value)?;
+    ensure_positive_u32_bound("simple bit unpack bound", max_value)?;
 
     let width = bit_length(max_value);
     ensure_packed_length("simple bit packed polynomial", bytes.len(), width)?;
@@ -93,7 +96,7 @@ pub fn bit_unpack(bytes: &[u8], a: u32, b: u32) -> DilithiumResult<Poly> {
     let total = a.checked_add(b).ok_or(DilithiumError::MalformedEncoding(
         "bit unpack bounds overflow",
     ))?;
-    ensure_positive_bound("bit unpack bound", total)?;
+    ensure_positive_u32_bound("bit unpack bound", total)?;
 
     let width = bit_length(total);
     ensure_packed_length("bit packed polynomial", bytes.len(), width)?;
@@ -134,58 +137,11 @@ fn bit_length(value: u32) -> usize {
     (u32::BITS - value.leading_zeros()) as usize
 }
 
-fn ensure_positive_bound(item: &'static str, bound: u32) -> DilithiumResult<()> {
-    if bound > 0 {
-        Ok(())
-    } else {
-        Err(DilithiumError::ValueOutOfRange {
-            item,
-            min: 1,
-            max: i64::from(u32::MAX),
-            actual: 0,
-        })
-    }
-}
-
 fn ensure_packed_length(
     item: &'static str,
     actual_bytes: usize,
     bit_width: usize,
 ) -> DilithiumResult<()> {
     let expected = (N * bit_width).div_ceil(8);
-    if actual_bytes == expected {
-        Ok(())
-    } else {
-        Err(DilithiumError::InvalidLength {
-            expected,
-            actual: actual_bytes,
-            item,
-        })
-    }
-}
-
-fn ensure_u32_range(item: &'static str, value: u32, min: u32, max: u32) -> DilithiumResult<()> {
-    if (min..=max).contains(&value) {
-        Ok(())
-    } else {
-        Err(DilithiumError::ValueOutOfRange {
-            item,
-            min: min as i64,
-            max: max as i64,
-            actual: value as i64,
-        })
-    }
-}
-
-fn ensure_i32_range(item: &'static str, value: i32, min: i32, max: i32) -> DilithiumResult<()> {
-    if (min..=max).contains(&value) {
-        Ok(())
-    } else {
-        Err(DilithiumError::ValueOutOfRange {
-            item,
-            min: min as i64,
-            max: max as i64,
-            actual: value as i64,
-        })
-    }
+    ensure_len(item, expected, actual_bytes)
 }

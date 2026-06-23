@@ -26,6 +26,7 @@ use crate::error::{DilithiumError, DilithiumResult};
 use crate::hints::HintsVector;
 use crate::params::{N, ParameterSet};
 use crate::poly::{Poly, PolyVector};
+use crate::validation::ensure_len;
 
 /// Encodes one binary hint vector using FIPS 204 `HintBitPack`.
 ///
@@ -67,7 +68,7 @@ pub fn hint_bit_unpack(
 ) -> DilithiumResult<HintsVector> {
     let omega = parameter_set.core.omega as usize;
     let k = parameter_set.core.k;
-    ensure_hint_encoding_len(encoding, omega + k)?;
+    ensure_len("hint encoding", omega + k, encoding.len())?;
 
     let mut polys = vec![Poly::zero(); k];
     let mut hint_count = 0usize;
@@ -108,16 +109,4 @@ pub fn hint_bit_unpack(
     }
 
     HintsVector::new(parameter_set, PolyVector::from_polys(k, polys)?)
-}
-
-fn ensure_hint_encoding_len(encoding: &[u8], expected: usize) -> DilithiumResult<()> {
-    if encoding.len() == expected {
-        Ok(())
-    } else {
-        Err(DilithiumError::InvalidLength {
-            expected,
-            actual: encoding.len(),
-            item: "hint encoding",
-        })
-    }
 }

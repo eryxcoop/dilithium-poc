@@ -3,7 +3,7 @@
 use crate::error::DilithiumResult;
 use crate::params::ParameterSet;
 use crate::poly::Poly;
-use crate::poly::validation::ensure_item_len;
+use crate::validation::ensure_len;
 
 /// Matrix of polynomials with `rows x cols` runtime dimensions.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -30,7 +30,7 @@ impl PolyMatrix {
 
     /// Builds a matrix from explicit polynomials in row-major order.
     pub fn from_polys(rows: usize, cols: usize, polys: Vec<Poly>) -> DilithiumResult<Self> {
-        ensure_item_len("polynomial matrix", rows * cols, polys.len())?;
+        ensure_len("polynomial matrix", rows * cols, polys.len())?;
         Ok(Self { rows, cols, polys })
     }
 

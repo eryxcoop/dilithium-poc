@@ -11,6 +11,7 @@ pub mod params;
 pub mod poly;
 pub mod round;
 pub mod types;
+mod validation;
 
 #[cfg(test)]
 mod tests;

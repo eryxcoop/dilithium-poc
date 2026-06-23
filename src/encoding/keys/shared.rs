@@ -1,9 +1,10 @@
 //! Shared helpers for FIPS 204 key encoders.
 
 use crate::encoding::bit_unpack;
-use crate::error::{DilithiumError, DilithiumResult};
+use crate::error::DilithiumResult;
 use crate::params::{D, N, Q};
 use crate::poly::PolyVector;
+pub(super) use crate::validation::{ensure_dimension, ensure_len};
 
 /// Copies a fixed-size byte array out of a checked slice.
 pub(super) fn array_from_slice<const LEN: usize>(slice: &[u8]) -> [u8; LEN] {
@@ -87,38 +88,4 @@ pub(super) fn unpack_vector(
     }
 
     PolyVector::from_polys(dimension, polys)
-}
-
-/// Checks that a key component has the expected vector dimension.
-pub(super) fn ensure_dimension(
-    item: &'static str,
-    expected: usize,
-    actual: usize,
-) -> DilithiumResult<()> {
-    if expected == actual {
-        Ok(())
-    } else {
-        Err(DilithiumError::DimensionMismatch {
-            expected,
-            actual,
-            item,
-        })
-    }
-}
-
-/// Checks that a raw key encoding has the exact expected length.
-pub(super) fn ensure_len(
-    item: &'static str,
-    expected: usize,
-    actual: usize,
-) -> DilithiumResult<()> {
-    if expected == actual {
-        Ok(())
-    } else {
-        Err(DilithiumError::InvalidLength {
-            expected,
-            actual,
-            item,
-        })
-    }
 }

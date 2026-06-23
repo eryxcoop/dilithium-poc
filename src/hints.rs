@@ -8,6 +8,7 @@ use crate::coefficient::Coefficient;
 use crate::error::{DilithiumError, DilithiumResult};
 use crate::params::{N, ParameterSet};
 use crate::poly::{Poly, PolyVector};
+use crate::validation::ensure_dimension;
 
 /// Sparse binary hint vector used by ML-DSA signing and verification.
 ///
@@ -30,7 +31,7 @@ impl HintsVector {
             vector.dimension(),
         )?;
 
-        let weight = hint_weight(&vector)?;
+        let weight = vector.binary_weight()?;
         let omega = parameter_set.core.omega as usize;
         if weight > omega {
             return Err(DilithiumError::ValueOutOfRange {
@@ -153,40 +154,5 @@ impl HintsVector {
     /// Returns an iterator over the hint polynomials.
     pub fn iter(&self) -> impl ExactSizeIterator<Item = &Poly> + '_ {
         self.vector.iter()
-    }
-}
-
-fn hint_weight(vector: &PolyVector) -> DilithiumResult<usize> {
-    let mut weight = 0usize;
-
-    for poly in vector.iter() {
-        for coefficient in poly.iter() {
-            match coefficient.value() {
-                0 => {}
-                1 => weight += 1,
-                value => {
-                    return Err(DilithiumError::ValueOutOfRange {
-                        item: "hint coefficient",
-                        min: 0,
-                        max: 1,
-                        actual: value as i64,
-                    });
-                }
-            }
-        }
-    }
-
-    Ok(weight)
-}
-
-fn ensure_dimension(item: &'static str, expected: usize, actual: usize) -> DilithiumResult<()> {
-    if expected == actual {
-        Ok(())
-    } else {
-        Err(DilithiumError::DimensionMismatch {
-            expected,
-            actual,
-            item,
-        })
     }
 }

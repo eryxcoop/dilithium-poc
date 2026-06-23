@@ -3,7 +3,7 @@
 use crate::error::{DilithiumError, DilithiumResult};
 use crate::params::ParameterSet;
 use crate::poly::Poly;
-use crate::poly::validation::ensure_item_len;
+use crate::validation::{ensure_dimension, ensure_len};
 
 /// Vector of polynomials with a fixed runtime dimension.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -33,7 +33,7 @@ impl PolyVector {
 
     /// Builds a vector from explicit polynomials.
     pub fn from_polys(dimension: usize, polys: Vec<Poly>) -> DilithiumResult<Self> {
-        ensure_item_len("polynomial vector", dimension, polys.len())?;
+        ensure_len("polynomial vector", dimension, polys.len())?;
         Ok(Self { dimension, polys })
     }
 
@@ -60,6 +60,35 @@ impl PolyVector {
     /// Returns the polynomial slice.
     pub fn polys(&self) -> &[Poly] {
         &self.polys
+    }
+
+    /// Returns the number of one coefficients in a binary polynomial vector.
+    ///
+    /// This helper is useful for ML-DSA hint vectors, where every coefficient
+    /// must be either `0` or `1` and the total number of ones is bounded by
+    /// `omega`. It returns [`DilithiumError::ValueOutOfRange`] if any coefficient
+    /// is not binary.
+    pub fn binary_weight(&self) -> DilithiumResult<usize> {
+        let mut weight = 0usize;
+
+        for poly in self.iter() {
+            for coefficient in poly.iter() {
+                match coefficient.value() {
+                    0 => {}
+                    1 => weight += 1,
+                    value => {
+                        return Err(DilithiumError::ValueOutOfRange {
+                            item: "hint coefficient",
+                            min: 0,
+                            max: 1,
+                            actual: value as i64,
+                        });
+                    }
+                }
+            }
+        }
+
+        Ok(weight)
     }
 
     /// Adds two vectors coefficientwise after checking that dimensions match.
@@ -99,14 +128,6 @@ impl PolyVector {
     }
 
     fn ensure_same_dimension(&self, rhs: &Self) -> DilithiumResult<()> {
-        if self.dimension == rhs.dimension {
-            Ok(())
-        } else {
-            Err(DilithiumError::DimensionMismatch {
-                expected: self.dimension,
-                actual: rhs.dimension,
-                item: "polynomial vector dimension",
-            })
-        }
+        ensure_dimension("polynomial vector dimension", self.dimension, rhs.dimension)
     }
 }
