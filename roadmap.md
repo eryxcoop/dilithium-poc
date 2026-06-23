@@ -31,7 +31,7 @@ Criterios de salida:
 
 Entregables:
 
-- `params.rs` con `ParameterSet` y constantes para `ML_DSA_44`, `ML_DSA_65`, `ML_DSA_87`.
+- `params/` con `ParameterSet`, `CoreParams`, `EncodedSizes` y constantes para `ML_DSA_44`, `ML_DSA_65`, `ML_DSA_87`.
 - Tipos internos para polinomios sobre `R_q = Z_q[X]/(X^256 + 1)` y vectores/matrices dimensionados por `(k, l)`.
 - Tablas de tamanos esperados:
   - ML-DSA-44: pk 1312, sk 2560, sig 2420.
@@ -211,8 +211,19 @@ dilithium-poc/
   src/
     lib.rs
     error.rs
-    params.rs
-    types.rs
+    params/
+      mod.rs
+      constants.rs
+      core.rs
+      ids.rs
+      sets.rs
+      sizes.rs
+    types/
+      mod.rs
+      private_key.rs
+      public_key.rs
+      signature.rs
+      validation.rs
     poly.rs
     ntt.rs
     reduce.rs

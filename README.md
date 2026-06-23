@@ -57,7 +57,13 @@ La estructura final esta detallada en `roadmap.md`. A grandes rasgos:
 
 ```text
 src/
-  params.rs
+  params/
+    mod.rs
+    constants.rs
+    core.rs
+    ids.rs
+    sets.rs
+    sizes.rs
   poly.rs
   ntt.rs
   encoding/
@@ -66,6 +72,7 @@ src/
   sign.rs
   verify.rs
   pkix/
+  types/
 tests/
 benches/
 ```

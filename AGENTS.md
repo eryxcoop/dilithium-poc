@@ -207,6 +207,7 @@ No usar un crate ML-DSA completo como implementacion principal. Puede usarse sol
 ## Reglas de implementacion
 
 - Preferir Rust seguro; evitar `unsafe`.
+- Agregar rustdocs a cada estructura, enum, constante publica, campo publico y funcion publica que se introduzca.
 - Separar API segura de API de test:
   - segura: randomness generado dentro del modulo criptografico;
   - test/KAT: seeds y `rnd` inyectables;
