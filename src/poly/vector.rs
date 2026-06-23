@@ -70,8 +70,7 @@ impl PolyVector {
             polys: self
                 .polys
                 .iter()
-                .cloned()
-                .zip(rhs.polys.iter().cloned())
+                .zip(rhs.polys.iter())
                 .map(|(lhs, rhs)| lhs + rhs)
                 .collect(),
         })
@@ -85,8 +84,7 @@ impl PolyVector {
             polys: self
                 .polys
                 .iter()
-                .cloned()
-                .zip(rhs.polys.iter().cloned())
+                .zip(rhs.polys.iter())
                 .map(|(lhs, rhs)| lhs - rhs)
                 .collect(),
         })
@@ -96,7 +94,7 @@ impl PolyVector {
     pub fn neg(&self) -> Self {
         Self {
             dimension: self.dimension,
-            polys: self.polys.iter().cloned().map(|poly| -poly).collect(),
+            polys: self.polys.iter().map(|poly| -poly).collect(),
         }
     }
 

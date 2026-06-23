@@ -47,30 +47,30 @@ impl Default for Poly {
     }
 }
 
-impl Add for Poly {
-    type Output = Self;
+impl Add<&Poly> for &Poly {
+    type Output = Poly;
 
-    fn add(self, rhs: Self) -> Self::Output {
-        Self::from_coeffs(array::from_fn(|index| {
+    fn add(self, rhs: &Poly) -> Self::Output {
+        Poly::from_coeffs(array::from_fn(|index| {
             self.coeffs[index] + rhs.coeffs[index]
         }))
     }
 }
 
-impl Sub for Poly {
-    type Output = Self;
+impl Sub<&Poly> for &Poly {
+    type Output = Poly;
 
-    fn sub(self, rhs: Self) -> Self::Output {
-        Self::from_coeffs(array::from_fn(|index| {
+    fn sub(self, rhs: &Poly) -> Self::Output {
+        Poly::from_coeffs(array::from_fn(|index| {
             self.coeffs[index] - rhs.coeffs[index]
         }))
     }
 }
 
-impl Neg for Poly {
-    type Output = Self;
+impl Neg for &Poly {
+    type Output = Poly;
 
     fn neg(self) -> Self::Output {
-        Self::from_coeffs(array::from_fn(|index| -self.coeffs[index]))
+        Poly::from_coeffs(array::from_fn(|index| -self.coeffs[index]))
     }
 }

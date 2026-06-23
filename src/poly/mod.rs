@@ -6,11 +6,13 @@
 
 mod coeffs;
 mod matrix;
+mod ntt;
 mod polynomial;
 mod validation;
 mod vector;
 
 pub use coeffs::Coefficients;
 pub use matrix::PolyMatrix;
+pub use ntt::NttPoly;
 pub use polynomial::Poly;
 pub use vector::PolyVector;

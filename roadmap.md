@@ -63,7 +63,7 @@ Orden sugerido de implementacion:
    Implementar el tipo `Coefficient`, la normalizacion modulo `q`, representantes canonicos/centrados y operaciones basicas por operator overloading. Antes de tocar NTT o packing, conviene fijar una semantica clara de rangos y representantes mod `q`.
 2. `poly/`
    Extender `Poly`, `PolyVector` y `PolyMatrix` con operaciones minimas y chequeos de forma necesarios para las primitivas siguientes, sin entrar todavia en signing o sampling.
-3. `ntt.rs`
+3. `poly/ntt/`
    Implementar NTT, inverse NTT y multiplicacion punto a punto en dominio NTT. Primero validar identidad `inv_ntt(ntt(a)) = a` y multiplicacion naive vs NTT para polinomios chicos/controlados.
 4. `round.rs`
    Implementar `Power2Round`, `Decompose`, `HighBits` y `LowBits`. Estas funciones son base tanto para compresion de clave publica como para reconstruccion de compromisos en verify.
@@ -253,11 +253,15 @@ dilithium-poc/
     poly/
       mod.rs
       coeffs.rs
+      ntt/
+        mod.rs
+        domain.rs
+        tables.rs
+        transform.rs
       polynomial.rs
       vector.rs
       matrix.rs
       validation.rs
-    ntt.rs
     round.rs
     encoding/
       mod.rs

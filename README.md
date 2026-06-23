@@ -67,11 +67,15 @@ src/
   poly/
     mod.rs
     coeffs.rs
+    ntt/
+      mod.rs
+      domain.rs
+      tables.rs
+      transform.rs
     polynomial.rs
     vector.rs
     matrix.rs
     validation.rs
-  ntt.rs
   encoding/
   sample.rs
   keygen.rs

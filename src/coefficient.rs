@@ -4,14 +4,16 @@
 //! domain model. The type carries the canonical representative modulo `q` and
 //! implements basic modular arithmetic through operator overloading.
 
-use core::ops::{Add, Neg, Sub};
+use core::ops::{Add, Mul, Neg, Sub};
 
 use crate::Q;
 
 /// One coefficient in `Z_q` with modular arithmetic semantics.
 ///
-/// The stored value is always the canonical representative modulo `q`, meaning
-/// it always lies in the range `[0, q)`.
+/// Instances produced by [`From<i32>`] and arithmetic operators are normalized
+/// to canonical representatives in `[0, q)`. Instances produced by
+/// [`Coefficient::centered`] use the centered representative range
+/// `[-(q - 1)/2, (q - 1)/2]`.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct Coefficient(i32);
 
@@ -95,6 +97,14 @@ impl Neg for Coefficient {
 
     fn neg(self) -> Self::Output {
         Self::canonical(-(self.0 as i64))
+    }
+}
+
+impl Mul for Coefficient {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        Self::canonical((self.0 as i64) * (rhs.0 as i64))
     }
 }
 
