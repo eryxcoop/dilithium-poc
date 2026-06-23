@@ -17,7 +17,7 @@ pub struct Signature {
 impl Signature {
     /// Builds a signature from a raw FIPS 204 signature encoding.
     ///
-    /// Returns [`crate::DilithiumError::InvalidLength`] unless `bytes.len()` exactly
+    /// Returns [`crate::error::DilithiumError::InvalidLength`] unless `bytes.len()` exactly
     /// matches `parameter_set.sizes.signature_bytes`.
     pub fn from_raw(parameter_set: ParameterSet, bytes: Vec<u8>) -> DilithiumResult<Self> {
         ensure_len(

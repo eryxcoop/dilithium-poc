@@ -1,6 +1,6 @@
 //! Forward and inverse NTT implementations.
 
-use crate::N;
+use crate::params::N;
 use crate::poly::Poly;
 use crate::poly::ntt::domain::NttPoly;
 use crate::poly::ntt::tables::{inverse_of_n, zetas_table};

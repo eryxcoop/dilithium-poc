@@ -13,7 +13,8 @@
 //! on the top boundary near `q - 1`, FIPS 204 maps that case back to
 //! `high = 0` and shifts the low part by `-1`.
 
-use crate::{Coefficient, D, Q};
+use crate::coefficient::Coefficient;
+use crate::params::{D, Q};
 
 /// Result of `Power2Round(r)` from FIPS 204 Algorithm 35.
 ///

@@ -6,7 +6,7 @@
 
 use core::ops::{Add, Mul, Neg, Sub};
 
-use crate::Q;
+use crate::params::Q;
 
 /// One coefficient in `Z_q` with modular arithmetic semantics.
 ///
