@@ -23,6 +23,66 @@ pub struct ParameterSet {
     pub sizes: EncodedSizes,
 }
 
+impl ParameterSet {
+    /// Returns the expected raw public-key size from the FIPS 204 formula.
+    pub const fn derived_public_key_bytes(&self) -> usize {
+        32 + (32
+            * self.core.k
+            * (bit_length_u32(super::constants::Q - 1) - super::constants::D as usize))
+    }
+
+    /// Returns the expected raw expanded private-key size from the FIPS 204 formula.
+    pub const fn derived_private_key_bytes(&self) -> usize {
+        32 + 32
+            + 64
+            + (32
+                * (((self.core.l + self.core.k) * bit_length_u32(2 * self.core.eta))
+                    + ((super::constants::D as usize) * self.core.k)))
+    }
+
+    /// Returns the expected raw signature size from the FIPS 204 formula.
+    pub const fn derived_signature_bytes(&self) -> usize {
+        (self.core.lambda as usize / 4)
+            + (self.core.l * 32 * (1 + bit_length_u32(self.core.gamma1 - 1)))
+            + (self.core.omega as usize)
+            + self.core.k
+    }
+
+    /// Returns `true` when the stored sizes match the formulas from FIPS 204.
+    pub const fn has_consistent_sizes(&self) -> bool {
+        self.sizes.public_key_bytes == self.derived_public_key_bytes()
+            && self.sizes.private_key_bytes == self.derived_private_key_bytes()
+            && self.sizes.signature_bytes == self.derived_signature_bytes()
+    }
+
+    /// Builds a non-standard parameter set for tests or experimental benches.
+    #[cfg(any(test, feature = "experimental-params"))]
+    pub const fn new_experimental(
+        name: &'static str,
+        security_category: u8,
+        core: CoreParams,
+        sizes: EncodedSizes,
+    ) -> Self {
+        Self {
+            id: ParameterSetId::Experimental,
+            name,
+            security_category,
+            core,
+            sizes,
+        }
+    }
+}
+
+const fn bit_length_u32(value: u32) -> usize {
+    let mut bits = 0usize;
+    let mut n = value;
+    while n != 0 {
+        bits += 1;
+        n >>= 1;
+    }
+    bits
+}
+
 /// FIPS 204 ML-DSA-44 parameter set.
 pub const ML_DSA_44: ParameterSet = ParameterSet {
     id: ParameterSetId::MlDsa44,

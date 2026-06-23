@@ -5,6 +5,7 @@
 
 pub mod error;
 pub mod params;
+pub mod poly;
 pub mod types;
 
 #[cfg(test)]
@@ -15,4 +16,5 @@ pub use params::{
     CoreParams, D, EncodedSizes, ML_DSA_44, ML_DSA_65, ML_DSA_87, N, PARAMETER_SETS, ParameterSet,
     ParameterSetId, Q, ZETA,
 };
+pub use poly::{Poly, PolyMatrix, PolyVector};
 pub use types::{PrivateKey, PublicKey, Signature};

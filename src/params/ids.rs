@@ -9,4 +9,7 @@ pub enum ParameterSetId {
     MlDsa65,
     /// ML-DSA-87, corresponding to NIST PQC security category 5.
     MlDsa87,
+    /// Non-standard parameter set intended only for tests and experiments.
+    #[cfg(any(test, feature = "experimental-params"))]
+    Experimental,
 }
