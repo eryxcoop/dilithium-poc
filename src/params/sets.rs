@@ -48,6 +48,22 @@ impl ParameterSet {
             + self.core.k
     }
 
+    /// Returns the length in bytes of `c_tilde` for signatures.
+    ///
+    /// FIPS 204 uses `lambda / 4`, giving 32, 48, and 64 bytes for
+    /// ML-DSA-44, ML-DSA-65, and ML-DSA-87 respectively.
+    pub const fn challenge_bytes(&self) -> usize {
+        self.core.lambda as usize / 4
+    }
+
+    /// Returns the maximum encoded `w1` coefficient.
+    ///
+    /// FIPS 204 uses `(q - 1) / (2 * gamma2) - 1`, giving 43 for ML-DSA-44
+    /// and 15 for ML-DSA-65/87.
+    pub const fn w1_max(&self) -> u32 {
+        (super::constants::Q - 1) / (2 * self.core.gamma2) - 1
+    }
+
     /// Returns `true` when the stored sizes match the formulas from FIPS 204.
     pub const fn has_consistent_sizes(&self) -> bool {
         self.sizes.public_key_bytes == self.derived_public_key_bytes()

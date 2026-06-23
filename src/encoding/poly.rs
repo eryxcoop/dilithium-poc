@@ -5,6 +5,7 @@
 //! standard and perform strict malformed-input checks for untrusted inputs.
 
 use crate::coefficient::Coefficient;
+use crate::encoding::shared::{bit_length, packed_poly_bytes};
 use crate::encoding::{bits_to_bytes, bits_to_integer, bytes_to_bits};
 use crate::error::{DilithiumError, DilithiumResult};
 use crate::params::{N, Q};
@@ -133,15 +134,11 @@ fn append_integer_bits(bits: &mut Vec<u8>, value: u64, width: usize) {
     }
 }
 
-fn bit_length(value: u32) -> usize {
-    (u32::BITS - value.leading_zeros()) as usize
-}
-
 fn ensure_packed_length(
     item: &'static str,
     actual_bytes: usize,
     bit_width: usize,
 ) -> DilithiumResult<()> {
-    let expected = (N * bit_width).div_ceil(8);
+    let expected = packed_poly_bytes(bit_width);
     ensure_len(item, expected, actual_bytes)
 }

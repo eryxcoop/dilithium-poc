@@ -131,6 +131,15 @@ impl HintsVector {
         self.parameter_set
     }
 
+    /// Checks that this hint vector belongs to `parameter_set`.
+    pub(crate) fn ensure_parameter_set(&self, parameter_set: ParameterSet) -> DilithiumResult<()> {
+        if self.parameter_set == parameter_set {
+            Ok(())
+        } else {
+            Err(DilithiumError::InvalidParameterSet)
+        }
+    }
+
     /// Returns the underlying validated polynomial vector.
     pub fn as_vector(&self) -> &PolyVector {
         &self.vector

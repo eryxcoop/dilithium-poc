@@ -1,8 +1,9 @@
 //! Shared helpers for FIPS 204 key encoders.
 
 use crate::encoding::bit_unpack;
+pub(super) use crate::encoding::shared::{bit_length, packed_poly_bytes};
 use crate::error::DilithiumResult;
-use crate::params::{D, N, Q};
+use crate::params::{D, Q};
 use crate::poly::PolyVector;
 pub(super) use crate::validation::{ensure_dimension, ensure_len};
 
@@ -44,30 +45,6 @@ pub(super) fn private_t0_a() -> u32 {
 /// With `d = 13`, this returns `2^12 = 4096`.
 pub(super) fn private_t0_b() -> u32 {
     1 << (D - 1)
-}
-
-/// Returns the exact encoded byte length for one packed polynomial.
-///
-/// The formula is `ceil(n * bit_width / 8)`. With `n = 256`, this simplifies
-/// to `32 * bit_width` bytes. In key encoding this yields:
-///
-/// - `packed_poly_bytes(10) = 320` bytes for each public-key `t1` polynomial.
-/// - `packed_poly_bytes(3) = 96` bytes for each ML-DSA-44/87 secret polynomial.
-/// - `packed_poly_bytes(4) = 128` bytes for each ML-DSA-65 secret polynomial.
-/// - `packed_poly_bytes(13) = 416` bytes for each private-key `t0` polynomial.
-pub(super) fn packed_poly_bytes(bit_width: usize) -> usize {
-    (N * bit_width).div_ceil(8)
-}
-
-/// Returns the bit length of a nonzero unsigned integer.
-///
-/// For the FIPS 204 key encoders, the relevant exact values are:
-///
-/// - `bit_length(q - 1) = bit_length(8380416) = 23`.
-/// - `bit_length(2 * eta) = 3` for `eta = 2`.
-/// - `bit_length(2 * eta) = 4` for `eta = 4`.
-pub(super) fn bit_length(value: u32) -> usize {
-    (u32::BITS - value.leading_zeros()) as usize
 }
 
 /// Decodes a consecutive packed vector using FIPS 204 `BitUnpack`.
