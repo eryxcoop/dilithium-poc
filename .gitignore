@@ -1,0 +1,22 @@
+# Rust build output
+/target/
+
+# Criterion and benchmark artifacts
+/criterion/
+/target/criterion/
+
+# Local editor and OS files
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Local environment and logs
+.env
+.env.*
+*.log
+
+# Temporary generated text from PDFs or experiments
+/tmp/
+*.tmp
