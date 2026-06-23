@@ -129,6 +129,42 @@ impl Coefficient {
     pub fn low_bits(self, gamma2: u32) -> i32 {
         self.decompose(gamma2).low()
     }
+
+    /// Returns `MakeHint(z, r)` from FIPS 204 Algorithm 39.
+    ///
+    /// The method receiver is `r`; the `z` argument is the perturbation whose
+    /// addition may alter the high bits. The result is `true` exactly when
+    /// `HighBits(r)` differs from `HighBits(r + z)`.
+    ///
+    /// In signing, this bit tells the verifier whether the reconstructed value
+    /// needs a one-step high-bit correction.
+    pub fn make_hint(self, z: Coefficient, gamma2: u32) -> bool {
+        self.high_bits(gamma2) != (self + z).high_bits(gamma2)
+    }
+
+    /// Returns `UseHint(h, r)` from FIPS 204 Algorithm 40.
+    ///
+    /// The method receiver is `r`; `hint` is the boolean output of
+    /// [`Coefficient::make_hint`]. When `hint` is false, this returns
+    /// `HighBits(r)`. When `hint` is true, it increments or decrements the high
+    /// bits modulo `m = (q - 1) / (2 * gamma2)` depending on the sign of
+    /// `LowBits(r)`.
+    pub fn use_hint(self, hint: bool, gamma2: u32) -> u32 {
+        assert!(gamma2 > 0, "gamma2 must be positive");
+
+        let m = (Q - 1) / (2 * gamma2);
+        let decomposed = self.decompose(gamma2);
+
+        if !hint {
+            return decomposed.high();
+        }
+
+        if decomposed.low() > 0 {
+            (decomposed.high() + 1) % m
+        } else {
+            ((decomposed.high() as i64) - 1).rem_euclid(m as i64) as u32
+        }
+    }
 }
 
 fn mod_plus_minus(value: i32, modulus: i32) -> i32 {

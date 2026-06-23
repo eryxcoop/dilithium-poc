@@ -6,6 +6,7 @@
 pub mod coefficient;
 pub mod encoding;
 pub mod error;
+pub mod hints;
 pub mod params;
 pub mod poly;
 pub mod round;
@@ -22,6 +23,7 @@ pub use encoding::{
     pk_encode, simple_bit_pack, simple_bit_unpack, sk_decode, sk_encode,
 };
 pub use error::{DilithiumError, DilithiumResult};
+pub use hints::HintsVector;
 pub use params::{
     CoreParams, D, EncodedSizes, ML_DSA_44, ML_DSA_65, ML_DSA_87, N, PARAMETER_SETS, ParameterSet,
     ParameterSetId, Q, ZETA,

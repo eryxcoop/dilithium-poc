@@ -23,6 +23,7 @@
 
 use crate::coefficient::Coefficient;
 use crate::error::{DilithiumError, DilithiumResult};
+use crate::hints::HintsVector;
 use crate::params::{N, ParameterSet};
 use crate::poly::{Poly, PolyVector};
 
@@ -31,8 +32,8 @@ use crate::poly::{Poly, PolyVector};
 /// The vector dimension must match `parameter_set.core.k`; coefficients must be
 /// binary (`0` or `1`); and the total number of one coefficients must be at most
 /// `parameter_set.core.omega`.
-pub fn hint_bit_pack(hints: &PolyVector, parameter_set: ParameterSet) -> DilithiumResult<Vec<u8>> {
-    ensure_hint_dimension(hints, parameter_set)?;
+pub fn hint_bit_pack(hints: &HintsVector) -> DilithiumResult<Vec<u8>> {
+    let parameter_set = hints.parameter_set();
 
     let omega = parameter_set.core.omega as usize;
     let k = parameter_set.core.k;
@@ -42,18 +43,7 @@ pub fn hint_bit_pack(hints: &PolyVector, parameter_set: ParameterSet) -> Dilithi
     for (poly_index, poly) in hints.iter().enumerate() {
         for (coeff_index, coefficient) in poly.iter().enumerate() {
             let value = coefficient.value();
-            ensure_binary_hint_coefficient(value)?;
-
             if value != 0 {
-                if hint_count >= omega {
-                    return Err(DilithiumError::ValueOutOfRange {
-                        item: "hint weight",
-                        min: 0,
-                        max: omega as i64,
-                        actual: (hint_count + 1) as i64,
-                    });
-                }
-
                 encoding[hint_count] = coeff_index as u8;
                 hint_count += 1;
             }
@@ -74,7 +64,7 @@ pub fn hint_bit_pack(hints: &PolyVector, parameter_set: ParameterSet) -> Dilithi
 pub fn hint_bit_unpack(
     encoding: &[u8],
     parameter_set: ParameterSet,
-) -> DilithiumResult<PolyVector> {
+) -> DilithiumResult<HintsVector> {
     let omega = parameter_set.core.omega as usize;
     let k = parameter_set.core.k;
     ensure_hint_encoding_len(encoding, omega + k)?;
@@ -117,19 +107,7 @@ pub fn hint_bit_unpack(
         }
     }
 
-    PolyVector::from_polys(k, polys)
-}
-
-fn ensure_hint_dimension(hints: &PolyVector, parameter_set: ParameterSet) -> DilithiumResult<()> {
-    if hints.dimension() == parameter_set.core.k {
-        Ok(())
-    } else {
-        Err(DilithiumError::DimensionMismatch {
-            expected: parameter_set.core.k,
-            actual: hints.dimension(),
-            item: "hint vector dimension",
-        })
-    }
+    HintsVector::new(parameter_set, PolyVector::from_polys(k, polys)?)
 }
 
 fn ensure_hint_encoding_len(encoding: &[u8], expected: usize) -> DilithiumResult<()> {
@@ -140,19 +118,6 @@ fn ensure_hint_encoding_len(encoding: &[u8], expected: usize) -> DilithiumResult
             expected,
             actual: encoding.len(),
             item: "hint encoding",
-        })
-    }
-}
-
-fn ensure_binary_hint_coefficient(value: i32) -> DilithiumResult<()> {
-    if value == 0 || value == 1 {
-        Ok(())
-    } else {
-        Err(DilithiumError::ValueOutOfRange {
-            item: "hint coefficient",
-            min: 0,
-            max: 1,
-            actual: value as i64,
         })
     }
 }

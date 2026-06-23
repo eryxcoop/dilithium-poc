@@ -5,6 +5,7 @@ use crate::encoding::{
     sk_decode, sk_encode,
 };
 use crate::error::DilithiumError;
+use crate::hints::HintsVector;
 use crate::params::{
     CoreParams, D, EncodedSizes, ML_DSA_44, ML_DSA_65, ML_DSA_87, N, PARAMETER_SETS, ParameterSet,
     ParameterSetId, Q, ZETA,
@@ -420,6 +421,87 @@ fn high_bits_and_low_bits_match_decompose_output() {
 }
 
 #[test]
+fn make_hint_detects_high_bit_changes() {
+    let gamma2 = ML_DSA_44.core.gamma2;
+    let stable = Coefficient::from(5);
+    let changes = Coefficient::from(gamma2 as i32);
+
+    assert!(!stable.make_hint(Coefficient::from(3), gamma2));
+    assert!(changes.make_hint(Coefficient::from(1), gamma2));
+}
+
+#[test]
+fn use_hint_applies_fips_increment_and_decrement_rules() {
+    let gamma2 = ML_DSA_44.core.gamma2;
+    let m = (Q - 1) / (2 * gamma2);
+
+    assert_eq!(Coefficient::from(gamma2 as i32).use_hint(true, gamma2), 1);
+    assert_eq!(Coefficient::from(0).use_hint(true, gamma2), m - 1);
+    assert_eq!(
+        Coefficient::from(gamma2 as i32).use_hint(false, gamma2),
+        Coefficient::from(gamma2 as i32).high_bits(gamma2)
+    );
+}
+
+#[test]
+fn make_hint_and_use_hint_vectors_roundtrip_through_hint_encoding() {
+    let gamma2 = ML_DSA_44.core.gamma2;
+    let z = PolyVector::from_polys(
+        ML_DSA_44.core.k,
+        vec![
+            poly_with_coefficients(&[(0, 1)]),
+            poly_with_coefficients(&[(1, 3)]),
+            Poly::zero(),
+            Poly::zero(),
+        ],
+    )
+    .unwrap();
+    let r = PolyVector::from_polys(
+        ML_DSA_44.core.k,
+        vec![
+            poly_with_coefficients(&[(0, gamma2 as i32)]),
+            poly_with_coefficients(&[(1, 5)]),
+            Poly::zero(),
+            Poly::zero(),
+        ],
+    )
+    .unwrap();
+
+    let hints = HintsVector::make(ML_DSA_44, &z, &r).unwrap();
+    let packed = hint_bit_pack(&hints).unwrap();
+    let unpacked = hint_bit_unpack(&packed, ML_DSA_44).unwrap();
+    let adjusted = unpacked.use_on(&r).unwrap();
+    let expected = high_bits_vector(&r.checked_add(&z).unwrap(), gamma2);
+
+    assert_eq!(unpacked, hints);
+    assert_eq!(adjusted, expected);
+}
+
+#[test]
+fn hints_vector_rejects_non_binary_hints() {
+    let hints = PolyVector::from_polys(
+        ML_DSA_44.core.k,
+        vec![
+            poly_with_coefficients(&[(0, 2)]),
+            Poly::zero(),
+            Poly::zero(),
+            Poly::zero(),
+        ],
+    )
+    .unwrap();
+
+    assert_eq!(
+        HintsVector::new(ML_DSA_44, hints).unwrap_err(),
+        DilithiumError::ValueOutOfRange {
+            item: "hint coefficient",
+            min: 0,
+            max: 1,
+            actual: 2,
+        }
+    );
+}
+
+#[test]
 fn bits_to_integer_uses_little_endian_bit_order() {
     assert_eq!(bits_to_integer(&[1, 0, 1, 1]).unwrap(), 13);
     assert_eq!(bits_to_integer(&[0, 1, 0, 1, 1]).unwrap(), 26);
@@ -531,18 +613,22 @@ fn unpack_rejects_wrong_lengths() {
 
 #[test]
 fn hint_bit_pack_and_unpack_roundtrip() {
-    let hints = PolyVector::from_polys(
-        ML_DSA_44.core.k,
-        vec![
-            binary_hint_poly(&[0, 7]),
-            binary_hint_poly(&[3]),
-            binary_hint_poly(&[]),
-            binary_hint_poly(&[255]),
-        ],
+    let hints = HintsVector::new(
+        ML_DSA_44,
+        PolyVector::from_polys(
+            ML_DSA_44.core.k,
+            vec![
+                binary_hint_poly(&[0, 7]),
+                binary_hint_poly(&[3]),
+                binary_hint_poly(&[]),
+                binary_hint_poly(&[255]),
+            ],
+        )
+        .unwrap(),
     )
     .unwrap();
 
-    let packed = hint_bit_pack(&hints, ML_DSA_44).unwrap();
+    let packed = hint_bit_pack(&hints).unwrap();
     let unpacked = hint_bit_unpack(&packed, ML_DSA_44).unwrap();
 
     assert_eq!(
@@ -555,11 +641,11 @@ fn hint_bit_pack_and_unpack_roundtrip() {
 }
 
 #[test]
-fn hint_bit_pack_rejects_wrong_dimension() {
+fn hints_vector_rejects_wrong_dimension() {
     let hints = PolyVector::from_polys(1, vec![Poly::zero()]).unwrap();
 
     assert_eq!(
-        hint_bit_pack(&hints, ML_DSA_44).unwrap_err(),
+        HintsVector::new(ML_DSA_44, hints).unwrap_err(),
         DilithiumError::DimensionMismatch {
             expected: ML_DSA_44.core.k,
             actual: 1,
@@ -569,7 +655,7 @@ fn hint_bit_pack_rejects_wrong_dimension() {
 }
 
 #[test]
-fn hint_bit_pack_rejects_non_binary_coefficients() {
+fn hints_vector_rejects_non_binary_coefficients() {
     let hints = PolyVector::from_polys(
         ML_DSA_44.core.k,
         vec![
@@ -586,7 +672,7 @@ fn hint_bit_pack_rejects_non_binary_coefficients() {
     .unwrap();
 
     assert_eq!(
-        hint_bit_pack(&hints, ML_DSA_44).unwrap_err(),
+        HintsVector::new(ML_DSA_44, hints).unwrap_err(),
         DilithiumError::ValueOutOfRange {
             item: "hint coefficient",
             min: 0,
@@ -597,7 +683,7 @@ fn hint_bit_pack_rejects_non_binary_coefficients() {
 }
 
 #[test]
-fn hint_bit_pack_rejects_weight_above_omega() {
+fn hints_vector_rejects_weight_above_omega() {
     let hints = PolyVector::from_polys(
         ML_DSA_65.core.k,
         vec![
@@ -612,7 +698,7 @@ fn hint_bit_pack_rejects_weight_above_omega() {
     .unwrap();
 
     assert_eq!(
-        hint_bit_pack(&hints, ML_DSA_65).unwrap_err(),
+        HintsVector::new(ML_DSA_65, hints).unwrap_err(),
         DilithiumError::ValueOutOfRange {
             item: "hint weight",
             min: 0,
@@ -886,4 +972,23 @@ fn poly_with_coefficients(entries: &[(usize, i32)]) -> Poly {
         coeffs[index] = Coefficient::from(value);
     }
     Poly::from_coeffs(coeffs)
+}
+
+fn high_bits_vector(vector: &PolyVector, gamma2: u32) -> PolyVector {
+    PolyVector::from_polys(
+        vector.dimension(),
+        vector
+            .iter()
+            .map(|poly| {
+                Poly::from_coeffs(core::array::from_fn(|index| {
+                    Coefficient::from(
+                        poly.coeff(index)
+                            .expect("coefficient index is in range")
+                            .high_bits(gamma2) as i32,
+                    )
+                }))
+            })
+            .collect(),
+    )
+    .unwrap()
 }
