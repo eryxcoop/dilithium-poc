@@ -16,8 +16,10 @@ mod tests;
 
 pub use coefficient::{CANONICAL_MAX, CANONICAL_MIN, CENTERED_MAX, CENTERED_MIN, Coefficient};
 pub use encoding::{
-    bit_pack, bit_unpack, bits_to_bytes, bits_to_integer, bytes_to_bits, integer_to_bytes,
-    simple_bit_pack, simple_bit_unpack,
+    EncodedPrivateKeyParts, EncodedPublicKeyParts, PublicKeyHash, RHO_BYTES, Rho,
+    SECRET_KEY_SEED_BYTES, SecretKeySeed, TR_BYTES, bit_pack, bit_unpack, bits_to_bytes,
+    bits_to_integer, bytes_to_bits, hint_bit_pack, hint_bit_unpack, integer_to_bytes, pk_decode,
+    pk_encode, simple_bit_pack, simple_bit_unpack, sk_decode, sk_encode,
 };
 pub use error::{DilithiumError, DilithiumResult};
 pub use params::{

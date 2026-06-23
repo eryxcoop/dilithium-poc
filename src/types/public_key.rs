@@ -17,7 +17,7 @@ pub struct PublicKey {
 impl PublicKey {
     /// Builds a public key from a raw FIPS 204 public-key encoding.
     ///
-    /// Returns [`crate::Error::InvalidLength`] unless `bytes.len()` exactly
+    /// Returns [`crate::DilithiumError::InvalidLength`] unless `bytes.len()` exactly
     /// matches `parameter_set.sizes.public_key_bytes`.
     pub fn from_raw(parameter_set: ParameterSet, bytes: Vec<u8>) -> DilithiumResult<Self> {
         ensure_len(
