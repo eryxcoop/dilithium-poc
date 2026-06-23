@@ -1,6 +1,6 @@
 //! Polynomial-vector type for ML-DSA.
 
-use crate::error::{Error, Result};
+use crate::error::{DilithiumError, DilithiumResult};
 use crate::params::ParameterSet;
 use crate::poly::Poly;
 use crate::poly::validation::ensure_item_len;
@@ -32,7 +32,7 @@ impl PolyVector {
     }
 
     /// Builds a vector from explicit polynomials.
-    pub fn from_polys(dimension: usize, polys: Vec<Poly>) -> Result<Self> {
+    pub fn from_polys(dimension: usize, polys: Vec<Poly>) -> DilithiumResult<Self> {
         ensure_item_len("polynomial vector", dimension, polys.len())?;
         Ok(Self { dimension, polys })
     }
@@ -63,7 +63,7 @@ impl PolyVector {
     }
 
     /// Adds two vectors coefficientwise after checking that dimensions match.
-    pub fn checked_add(&self, rhs: &Self) -> Result<Self> {
+    pub fn checked_add(&self, rhs: &Self) -> DilithiumResult<Self> {
         self.ensure_same_dimension(rhs)?;
         Ok(Self {
             dimension: self.dimension,
@@ -77,7 +77,7 @@ impl PolyVector {
     }
 
     /// Subtracts two vectors coefficientwise after checking that dimensions match.
-    pub fn checked_sub(&self, rhs: &Self) -> Result<Self> {
+    pub fn checked_sub(&self, rhs: &Self) -> DilithiumResult<Self> {
         self.ensure_same_dimension(rhs)?;
         Ok(Self {
             dimension: self.dimension,
@@ -98,11 +98,11 @@ impl PolyVector {
         }
     }
 
-    fn ensure_same_dimension(&self, rhs: &Self) -> Result<()> {
+    fn ensure_same_dimension(&self, rhs: &Self) -> DilithiumResult<()> {
         if self.dimension == rhs.dimension {
             Ok(())
         } else {
-            Err(Error::DimensionMismatch {
+            Err(DilithiumError::DimensionMismatch {
                 expected: self.dimension,
                 actual: rhs.dimension,
                 item: "polynomial vector dimension",

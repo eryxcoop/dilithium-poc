@@ -107,7 +107,7 @@ fn polynomial_domain_types_reject_wrong_lengths() {
     let err = PolyVector::from_polys(2, vec![Poly::zero()]).unwrap_err();
     assert_eq!(
         err,
-        Error::InvalidLength {
+        DilithiumError::InvalidLength {
             expected: 2,
             actual: 1,
             item: "polynomial vector",
@@ -117,7 +117,7 @@ fn polynomial_domain_types_reject_wrong_lengths() {
     let err = PolyMatrix::from_polys(2, 3, vec![Poly::zero(); 5]).unwrap_err();
     assert_eq!(
         err,
-        Error::InvalidLength {
+        DilithiumError::InvalidLength {
             expected: 6,
             actual: 5,
             item: "polynomial matrix",
@@ -246,7 +246,7 @@ fn polynomial_vectors_support_checked_shape_aware_arithmetic() {
     assert_eq!(neg.dimension(), 2);
     assert_eq!(
         lhs.checked_add(&mismatch).unwrap_err(),
-        Error::DimensionMismatch {
+        DilithiumError::DimensionMismatch {
             expected: 2,
             actual: 1,
             item: "polynomial vector dimension",
@@ -406,6 +406,100 @@ fn high_bits_and_low_bits_match_decompose_output() {
             decomposed.low()
         );
     }
+}
+
+#[test]
+fn bits_to_integer_uses_little_endian_bit_order() {
+    assert_eq!(bits_to_integer(&[1, 0, 1, 1]).unwrap(), 13);
+    assert_eq!(bits_to_integer(&[0, 1, 0, 1, 1]).unwrap(), 26);
+}
+
+#[test]
+fn integer_to_bytes_uses_little_endian_byte_order() {
+    assert_eq!(
+        integer_to_bytes(0x12_34_56, 4),
+        vec![0x56, 0x34, 0x12, 0x00]
+    );
+    assert_eq!(integer_to_bytes(257, 2), vec![1, 1]);
+}
+
+#[test]
+fn bits_and_bytes_roundtrip() {
+    let bytes = vec![0xa5, 0x01, 0xfe];
+    let bits = bytes_to_bits(&bytes);
+
+    assert_eq!(bits_to_bytes(&bits).unwrap(), bytes);
+}
+
+#[test]
+fn simple_bit_pack_and_unpack_roundtrip() {
+    let values = vec![0, 3, 7, 1, 4, 2];
+    let packed = simple_bit_pack(&values, 7).unwrap();
+    let unpacked = simple_bit_unpack(&packed, 7, values.len()).unwrap();
+
+    assert_eq!(unpacked, values);
+}
+
+#[test]
+fn bit_pack_and_unpack_roundtrip() {
+    let values = vec![-2, 0, 2, -1, 1, 2];
+    let packed = bit_pack(&values, 2, 2).unwrap();
+    let unpacked = bit_unpack(&packed, 2, 2, values.len()).unwrap();
+
+    assert_eq!(unpacked, values);
+}
+
+#[test]
+fn bits_to_bytes_rejects_non_binary_input() {
+    assert_eq!(
+        bits_to_bytes(&[0, 1, 2]).unwrap_err(),
+        DilithiumError::ValueOutOfRange {
+            item: "bit",
+            min: 0,
+            max: 1,
+            actual: 2,
+        }
+    );
+}
+
+#[test]
+fn simple_bit_unpack_rejects_malformed_out_of_range_coefficients() {
+    let malformed = vec![0x0f];
+
+    assert_eq!(
+        simple_bit_unpack(&malformed, 10, 1).unwrap_err(),
+        DilithiumError::MalformedEncoding("simple bit unpack produced out-of-range coefficient")
+    );
+}
+
+#[test]
+fn bit_unpack_rejects_malformed_out_of_range_coefficients() {
+    let malformed = vec![0x07];
+
+    assert_eq!(
+        bit_unpack(&malformed, 2, 2, 1).unwrap_err(),
+        DilithiumError::MalformedEncoding("bit unpack produced out-of-range coefficient")
+    );
+}
+
+#[test]
+fn unpack_rejects_wrong_lengths() {
+    assert_eq!(
+        simple_bit_unpack(&[], 7, 3).unwrap_err(),
+        DilithiumError::InvalidLength {
+            expected: 2,
+            actual: 0,
+            item: "simple bit packed polynomial",
+        }
+    );
+    assert_eq!(
+        bit_unpack(&[], 2, 2, 3).unwrap_err(),
+        DilithiumError::InvalidLength {
+            expected: 2,
+            actual: 0,
+            item: "bit packed polynomial",
+        }
+    );
 }
 
 fn naive_negacyclic_mul(lhs: &Poly, rhs: &Poly) -> Poly {

@@ -1,6 +1,6 @@
 //! Polynomial-matrix type for ML-DSA.
 
-use crate::error::Result;
+use crate::error::DilithiumResult;
 use crate::params::ParameterSet;
 use crate::poly::Poly;
 use crate::poly::validation::ensure_item_len;
@@ -29,7 +29,7 @@ impl PolyMatrix {
     }
 
     /// Builds a matrix from explicit polynomials in row-major order.
-    pub fn from_polys(rows: usize, cols: usize, polys: Vec<Poly>) -> Result<Self> {
+    pub fn from_polys(rows: usize, cols: usize, polys: Vec<Poly>) -> DilithiumResult<Self> {
         ensure_item_len("polynomial matrix", rows * cols, polys.len())?;
         Ok(Self { rows, cols, polys })
     }

@@ -1,6 +1,6 @@
 //! Raw FIPS 204 public-key wrapper.
 
-use crate::error::Result;
+use crate::error::DilithiumResult;
 use crate::params::ParameterSet;
 use crate::types::validation::ensure_len;
 
@@ -19,7 +19,7 @@ impl PublicKey {
     ///
     /// Returns [`crate::Error::InvalidLength`] unless `bytes.len()` exactly
     /// matches `parameter_set.sizes.public_key_bytes`.
-    pub fn from_raw(parameter_set: ParameterSet, bytes: Vec<u8>) -> Result<Self> {
+    pub fn from_raw(parameter_set: ParameterSet, bytes: Vec<u8>) -> DilithiumResult<Self> {
         ensure_len(
             "public key",
             parameter_set.sizes.public_key_bytes,
