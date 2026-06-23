@@ -59,6 +59,11 @@ impl Coefficient {
         self.0
     }
 
+    /// Returns the canonical integer representative in `[0, q)`.
+    pub(crate) fn canonical_value(self) -> i32 {
+        Self::canonical(self.0 as i64).0
+    }
+
     /// Returns `true` when this coefficient is already in canonical form.
     pub fn is_canonical(self) -> bool {
         (CANONICAL_MIN.0..=CANONICAL_MAX.0).contains(&self.0)

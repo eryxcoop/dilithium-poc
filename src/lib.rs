@@ -7,6 +7,7 @@ pub mod coefficient;
 pub mod error;
 pub mod params;
 pub mod poly;
+pub mod round;
 pub mod types;
 
 #[cfg(test)]
@@ -19,4 +20,5 @@ pub use params::{
     ParameterSetId, Q, ZETA,
 };
 pub use poly::{NttPoly, Poly, PolyMatrix, PolyVector};
+pub use round::{Decomposed, Power2Round};
 pub use types::{PrivateKey, PublicKey, Signature};
