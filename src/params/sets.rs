@@ -1,9 +1,9 @@
 //! Complete FIPS 204 ML-DSA parameter-set descriptions.
 
-use super::constants::Q;
-use super::core::CoreParams;
-use super::ids::ParameterSetId;
-use super::sizes::EncodedSizes;
+use crate::params::constants::{D, Q};
+use crate::params::core::CoreParams;
+use crate::params::ids::ParameterSetId;
+use crate::params::sizes::EncodedSizes;
 
 /// Static metadata for a FIPS 204 ML-DSA parameter set.
 ///
@@ -26,9 +26,7 @@ pub struct ParameterSet {
 impl ParameterSet {
     /// Returns the expected raw public-key size from the FIPS 204 formula.
     pub const fn derived_public_key_bytes(&self) -> usize {
-        32 + (32
-            * self.core.k
-            * (bit_length_u32(super::constants::Q - 1) - super::constants::D as usize))
+        32 + (32 * self.core.k * (bit_length_u32(Q - 1) - D as usize))
     }
 
     /// Returns the expected raw expanded private-key size from the FIPS 204 formula.
@@ -37,7 +35,7 @@ impl ParameterSet {
             + 64
             + (32
                 * (((self.core.l + self.core.k) * bit_length_u32(2 * self.core.eta))
-                    + ((super::constants::D as usize) * self.core.k)))
+                    + ((D as usize) * self.core.k)))
     }
 
     /// Returns the expected raw signature size from the FIPS 204 formula.
@@ -61,7 +59,7 @@ impl ParameterSet {
     /// FIPS 204 uses `(q - 1) / (2 * gamma2) - 1`, giving 43 for ML-DSA-44
     /// and 15 for ML-DSA-65/87.
     pub const fn w1_max(&self) -> u32 {
-        (super::constants::Q - 1) / (2 * self.core.gamma2) - 1
+        (Q - 1) / (2 * self.core.gamma2) - 1
     }
 
     /// Returns `true` when the stored sizes match the formulas from FIPS 204.
