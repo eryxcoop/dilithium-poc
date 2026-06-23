@@ -1,8 +1,8 @@
 use crate::coefficient::{CANONICAL_MAX, CANONICAL_MIN, CENTERED_MAX, CENTERED_MIN, Coefficient};
 use crate::encoding::{
     bit_pack, bit_unpack, bits_to_bytes, bits_to_integer, bytes_to_bits, hint_bit_pack,
-    hint_bit_unpack, integer_to_bytes, pk_decode, pk_encode, simple_bit_pack, simple_bit_unpack,
-    sk_decode, sk_encode,
+    hint_bit_unpack, integer_to_bytes, pk_decode, pk_encode, sig_decode, sig_encode,
+    simple_bit_pack, simple_bit_unpack, sk_decode, sk_encode, w1_encode,
 };
 use crate::error::DilithiumError;
 use crate::hints::HintsVector;
@@ -11,6 +11,7 @@ use crate::params::{
     ParameterSetId, Q, ZETA,
 };
 use crate::poly::{NttPoly, Poly, PolyMatrix, PolyVector};
+use crate::verify::verify_lengths;
 
 #[test]
 fn crate_scaffold_is_ready() {
@@ -936,6 +937,158 @@ fn private_key_decode_rejects_malformed_secret_polynomial() {
         sk_decode(&encoded, ML_DSA_44).unwrap_err(),
         DilithiumError::MalformedEncoding("bit unpack produced out-of-range coefficient")
     );
+}
+
+#[test]
+fn w1_encode_matches_expected_size_and_rejects_out_of_range_coefficients() {
+    let w1 = PolyVector::from_polys(
+        ML_DSA_44.core.k,
+        vec![
+            poly_with_coefficients(&[(0, 0), (1, 43)]),
+            Poly::zero(),
+            Poly::zero(),
+            Poly::zero(),
+        ],
+    )
+    .unwrap();
+
+    let encoded = w1_encode(&w1, ML_DSA_44).unwrap();
+
+    assert_eq!(encoded.len(), 768);
+
+    let malformed = PolyVector::from_polys(
+        ML_DSA_44.core.k,
+        vec![
+            poly_with_coefficients(&[(0, 44)]),
+            Poly::zero(),
+            Poly::zero(),
+            Poly::zero(),
+        ],
+    )
+    .unwrap();
+
+    assert_eq!(
+        w1_encode(&malformed, ML_DSA_44).unwrap_err(),
+        DilithiumError::ValueOutOfRange {
+            item: "packed coefficient",
+            min: 0,
+            max: 43,
+            actual: 44,
+        }
+    );
+}
+
+#[test]
+fn signature_encode_and_decode_roundtrip() {
+    let c_tilde = vec![0x5au8; ML_DSA_44.core.lambda as usize / 4];
+    let z = PolyVector::from_polys(
+        ML_DSA_44.core.l,
+        vec![
+            poly_with_coefficients(&[(0, -(ML_DSA_44.core.gamma1 as i32) + 1)]),
+            poly_with_coefficients(&[(1, ML_DSA_44.core.gamma1 as i32)]),
+            Poly::zero(),
+            poly_with_coefficients(&[(2, 17)]),
+        ],
+    )
+    .unwrap();
+    let hints = HintsVector::new(
+        ML_DSA_44,
+        PolyVector::from_polys(
+            ML_DSA_44.core.k,
+            vec![
+                binary_hint_poly(&[0, 7]),
+                binary_hint_poly(&[3]),
+                binary_hint_poly(&[]),
+                binary_hint_poly(&[255]),
+            ],
+        )
+        .unwrap(),
+    )
+    .unwrap();
+
+    let encoded = sig_encode(&c_tilde, &z, &hints, ML_DSA_44).unwrap();
+    let decoded = sig_decode(&encoded, ML_DSA_44).unwrap();
+
+    assert_eq!(encoded.len(), ML_DSA_44.sizes.signature_bytes);
+    assert_eq!(decoded.c_tilde, c_tilde);
+    assert_eq!(decoded.z, z);
+    assert_eq!(decoded.hints, hints);
+}
+
+#[test]
+fn signature_encode_rejects_wrong_challenge_length() {
+    let z = PolyVector::zero_l(ML_DSA_44);
+    let hints = HintsVector::new(ML_DSA_44, PolyVector::zero_k(ML_DSA_44)).unwrap();
+
+    assert_eq!(
+        sig_encode(&[], &z, &hints, ML_DSA_44).unwrap_err(),
+        DilithiumError::InvalidLength {
+            expected: ML_DSA_44.core.lambda as usize / 4,
+            actual: 0,
+            item: "signature challenge",
+        }
+    );
+}
+
+#[test]
+fn signature_encode_rejects_wrong_z_dimension() {
+    let c_tilde = vec![0u8; ML_DSA_44.core.lambda as usize / 4];
+    let z = PolyVector::from_polys(1, vec![Poly::zero()]).unwrap();
+    let hints = HintsVector::new(ML_DSA_44, PolyVector::zero_k(ML_DSA_44)).unwrap();
+
+    assert_eq!(
+        sig_encode(&c_tilde, &z, &hints, ML_DSA_44).unwrap_err(),
+        DilithiumError::DimensionMismatch {
+            expected: ML_DSA_44.core.l,
+            actual: 1,
+            item: "signature z vector",
+        }
+    );
+}
+
+#[test]
+fn signature_decode_rejects_wrong_length() {
+    assert_eq!(
+        sig_decode(&[], ML_DSA_44).unwrap_err(),
+        DilithiumError::InvalidLength {
+            expected: ML_DSA_44.sizes.signature_bytes,
+            actual: 0,
+            item: "signature",
+        }
+    );
+}
+
+#[test]
+fn signature_decode_rejects_malformed_hints() {
+    let c_tilde = vec![0u8; ML_DSA_44.core.lambda as usize / 4];
+    let z = PolyVector::zero_l(ML_DSA_44);
+    let hints = HintsVector::new(ML_DSA_44, PolyVector::zero_k(ML_DSA_44)).unwrap();
+    let mut encoded = sig_encode(&c_tilde, &z, &hints, ML_DSA_44).unwrap();
+    let hint_offset = encoded.len() - (ML_DSA_44.core.omega as usize + ML_DSA_44.core.k);
+    encoded[hint_offset] = 1;
+
+    assert_eq!(
+        sig_decode(&encoded, ML_DSA_44).unwrap_err(),
+        DilithiumError::MalformedEncoding("unused hint index byte is nonzero")
+    );
+}
+
+#[test]
+fn verify_lengths_rejects_public_key_or_signature_length_mismatch() {
+    let public_key = vec![0u8; ML_DSA_44.sizes.public_key_bytes];
+    let signature = vec![0u8; ML_DSA_44.sizes.signature_bytes];
+
+    assert!(verify_lengths(&public_key, &signature, ML_DSA_44));
+    assert!(!verify_lengths(
+        &public_key[..public_key.len() - 1],
+        &signature,
+        ML_DSA_44
+    ));
+    assert!(!verify_lengths(
+        &public_key,
+        &signature[..signature.len() - 1],
+        ML_DSA_44
+    ));
 }
 
 fn naive_negacyclic_mul(lhs: &Poly, rhs: &Poly) -> Poly {

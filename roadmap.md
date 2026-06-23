@@ -46,6 +46,11 @@ Criterios de salida:
 
 ### M2 - Primitivas aritmeticas y codificacion FIPS
 
+Estado: cerrado para la POC. Quedan implementadas las primitivas aritmeticas,
+rounding/hints y codificaciones raw FIPS de claves, firmas y `w1`; `Verify`
+solo cubre en este hito la frontera de rechazo por longitudes, y la verificacion
+criptografica completa queda para M4.
+
 Entregables:
 
 - Reduccion modular, NTT/inversa, multiplicacion punto a punto en dominio NTT.
