@@ -64,7 +64,13 @@ src/
     ids.rs
     sets.rs
     sizes.rs
-  poly.rs
+  poly/
+    mod.rs
+    coeffs.rs
+    polynomial.rs
+    vector.rs
+    matrix.rs
+    validation.rs
   ntt.rs
   encoding/
   sample.rs

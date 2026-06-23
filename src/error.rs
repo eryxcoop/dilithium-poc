@@ -16,6 +16,15 @@ pub enum Error {
         /// Human-readable item name, such as `"public key"` or `"signature"`.
         item: &'static str,
     },
+    /// Two algebraic objects do not agree on the shape required by the operation.
+    DimensionMismatch {
+        /// Expected dimension or item count.
+        expected: usize,
+        /// Actual dimension or item count.
+        actual: usize,
+        /// Human-readable item name, such as `"polynomial vector dimension"`.
+        item: &'static str,
+    },
     /// The requested ML-DSA parameter set is unknown or not enabled.
     InvalidParameterSet,
     /// Placeholder for functionality planned in later milestones.

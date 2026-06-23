@@ -57,6 +57,31 @@ Entregables:
   - `w1Encode`
   - `HintBitPack` / `HintBitUnpack`
 
+Orden sugerido de implementacion:
+
+1. `coefficient.rs`
+   Implementar el tipo `Coefficient`, la normalizacion modulo `q`, representantes canonicos/centrados y operaciones basicas por operator overloading. Antes de tocar NTT o packing, conviene fijar una semantica clara de rangos y representantes mod `q`.
+2. `poly/`
+   Extender `Poly`, `PolyVector` y `PolyMatrix` con operaciones minimas y chequeos de forma necesarios para las primitivas siguientes, sin entrar todavia en signing o sampling.
+3. `ntt.rs`
+   Implementar NTT, inverse NTT y multiplicacion punto a punto en dominio NTT. Primero validar identidad `inv_ntt(ntt(a)) = a` y multiplicacion naive vs NTT para polinomios chicos/controlados.
+4. `round.rs`
+   Implementar `Power2Round`, `Decompose`, `HighBits` y `LowBits`. Estas funciones son base tanto para compresion de clave publica como para reconstruccion de compromisos en verify.
+5. `encoding/bits.rs`
+   Implementar primero los bloques de bajo nivel de FIPS:
+   `BitsToInteger`, `IntegerToBytes`, `BitsToBytes`, `BytesToBits`, `SimpleBitPack`, `BitPack`, `SimpleBitUnpack`, `BitUnpack`.
+6. `encoding/hint.rs`
+   Implementar `HintBitPack` y `HintBitUnpack`, junto con tests negativos estrictos. Esta parte merece atencion especial porque FIPS 204 endurece la validacion de hints malformados.
+7. `encoding/signature.rs`
+   Implementar `w1Encode`, `sigEncode` y `sigDecode`, usando ya los bloques anteriores y asegurando tamanos exactos por parameter set.
+8. `encoding/keys.rs`
+   Implementar `pkEncode` / `pkDecode` y `skEncode` / `skDecode`. `pkDecode` debe quedar preparado para insumos no confiables; `skDecode` puede seguir tratado como trusted input interno.
+9. `round.rs` o modulo dedicado de hints
+   Implementar `MakeHint` y `UseHint` despues de tener listas las rutinas de decomposition y el packing de hints. Asi ya se puede testear ida y vuelta entre representacion algebraica y codificacion.
+10. Integracion M2
+    Cerrar con tests cruzados:
+    NTT roundtrip, multiplicacion naive vs NTT, invariantes de rounding, encode/decode roundtrip para pk/sk/sig/hints y casos negativos de decode.
+
 Criterios de salida:
 
 - Tests de ida y vuelta de codificacion para claves, firmas y hints.
@@ -210,6 +235,7 @@ dilithium-poc/
     CRYSTALS_Dilithium_Clean.md
   src/
     lib.rs
+    coefficient.rs
     error.rs
     params/
       mod.rs
@@ -224,9 +250,14 @@ dilithium-poc/
       public_key.rs
       signature.rs
       validation.rs
-    poly.rs
+    poly/
+      mod.rs
+      coeffs.rs
+      polynomial.rs
+      vector.rs
+      matrix.rs
+      validation.rs
     ntt.rs
-    reduce.rs
     round.rs
     encoding/
       mod.rs
