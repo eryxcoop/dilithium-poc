@@ -33,6 +33,21 @@ pub fn sign(
     )
 }
 
+/// Generates an ML-DSA signature using caller-supplied `rnd` for KAT/ACVP tests.
+///
+/// This is intentionally crate-private and compiled only for tests. The public
+/// API keeps hedged signing as the default and exposes only the deterministic
+/// all-zero variant for tests/instrumentation.
+#[cfg(test)]
+pub(crate) fn sign_with_randomness_for_test(
+    private_key: &PrivateKey,
+    message: &[u8],
+    context: &[u8],
+    randomness: [u8; SIGNING_RANDOMNESS_BYTES],
+) -> DilithiumResult<Signature> {
+    Ok(sign_with_report_internal(private_key, message, context, randomness)?.into_signature())
+}
+
 /// Generates a hedged ML-DSA signature and returns aggregate instrumentation.
 #[cfg(feature = "instrumentation")]
 pub fn sign_with_report(

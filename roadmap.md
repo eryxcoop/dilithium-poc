@@ -145,6 +145,13 @@ Criterios de salida:
 
 ### M5 - Conformidad medible
 
+Estado: cerrado para la POC en la frontera FIPS 204 pure external. La suite
+`conformance/` usa vectores oficiales NIST CAVP/ACVP descargados desde
+`usnistgov/ACVP-Server` y valida `keyGen`, `sigGen` y `sigVer` para
+ML-DSA-44/65/87. Los grupos ACVP `preHash` e `internal` quedan fuera del scope
+actual porque la POC expone pure ML-DSA; la conformidad DER/PKIX de RFC 9881
+permanece en M6.
+
 Entregables:
 
 - Test suite de KATs oficiales o ACVP/CAVP cuando esten disponibles localmente.

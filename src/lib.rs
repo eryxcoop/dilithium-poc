@@ -17,3 +17,7 @@ pub mod xof;
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+#[path = "../conformance/mod.rs"]
+mod conformance;

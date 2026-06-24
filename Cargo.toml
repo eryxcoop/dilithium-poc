@@ -11,11 +11,13 @@ experimental-params = []
 instrumentation = []
 
 [dependencies]
-rand_core = { version = "0.6", features = ["getrandom"] }
+rand_core = { version = "0.10.1", features = ["getrandom"] }
 sha3 = "0.10"
 
 [dev-dependencies]
 criterion = "0.5"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 
 [[bench]]
 name = "sampling"
