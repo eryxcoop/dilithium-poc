@@ -11,6 +11,7 @@ experimental-params = []
 instrumentation = []
 
 [dependencies]
+rand_core = { version = "0.6", features = ["getrandom"] }
 sha3 = "0.10"
 
 [dev-dependencies]
@@ -19,3 +20,8 @@ criterion = "0.5"
 [[bench]]
 name = "sampling"
 harness = false
+
+[[bench]]
+name = "signing_repetitions"
+harness = false
+required-features = ["instrumentation"]

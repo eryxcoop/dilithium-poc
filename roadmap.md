@@ -118,6 +118,13 @@ Criterios de salida:
 
 ### M4 - KeyGen, Sign, Verify FIPS 204
 
+Estado: cerrado para la POC. Quedan implementados los caminos high-level de
+pure ML-DSA: `keygen`, `keygen_from_seed`, signing hedged, signing
+deterministico de test/instrumentacion y `verify`, usando las primitivas de
+sampling, NTT, rounding, hints y encoding ya cerradas en M2/M3. La
+instrumentacion de repeticiones del loop de firma queda registrada por
+`SigningReport` y medida localmente en `benches/signing_repetitions.rs`.
+
 Entregables:
 
 - `keygen()` hedged por defecto desde RBG.

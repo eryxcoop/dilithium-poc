@@ -7,13 +7,12 @@ pub mod coefficient;
 pub mod encoding;
 pub mod error;
 pub mod hints;
+pub mod ml_dsa;
 pub mod params;
 pub mod poly;
 pub mod round;
 pub mod sampling;
-pub mod types;
 mod validation;
-pub mod verify;
 pub mod xof;
 
 #[cfg(test)]

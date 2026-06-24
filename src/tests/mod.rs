@@ -6,6 +6,7 @@ use crate::encoding::{
 };
 use crate::error::DilithiumError;
 use crate::hints::HintsVector;
+use crate::ml_dsa::{PublicKey, Signature, verify_lengths};
 use crate::params::{
     CoreParams, D, EncodedSizes, ML_DSA_44, ML_DSA_65, ML_DSA_87, N, PARAMETER_SETS, ParameterSet,
     ParameterSetId, Q, ZETA,
@@ -19,11 +20,11 @@ use crate::sampling::{
     expand_s, rej_bounded_poly, rej_bounded_poly_with_limits, rej_ntt_poly, sample_in_ball,
     sample_in_ball_with_limits,
 };
-use crate::verify::verify_lengths;
 use crate::xof::{shake128, shake256};
 
 mod algebra;
 mod encoding;
+mod ml_dsa;
 mod ntt;
 mod params;
 mod rounding;

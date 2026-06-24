@@ -58,7 +58,7 @@ impl SamplingReport {
         self.xof_bytes += xof_bytes;
     }
 
-    pub(super) fn absorb(&mut self, other: Self) {
+    pub(crate) fn absorb(&mut self, other: Self) {
         self.loop_iterations += other.loop_iterations;
         self.xof_bytes += other.xof_bytes;
         self.rejections += other.rejections;
