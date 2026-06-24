@@ -10,6 +10,7 @@ pub mod hints;
 pub mod params;
 pub mod poly;
 pub mod round;
+pub mod sampling;
 pub mod types;
 mod validation;
 pub mod verify;

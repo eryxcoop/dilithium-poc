@@ -95,6 +95,11 @@ Criterios de salida:
 
 ### M3 - Sampling y SHAKE
 
+Estado: cerrado para la POC. Quedan implementados SHAKE128/SHAKE256, los
+samplers FIPS `RejNTTPoly`, `RejBoundedPoly`, `ExpandA`, `ExpandS`,
+`ExpandMask` y `SampleInBall`, junto con limites opcionales tipo Table 3,
+tests deterministas y benchmarks de sampling.
+
 Entregables:
 
 - XOF SHAKE128/SHAKE256 segun FIPS 204.

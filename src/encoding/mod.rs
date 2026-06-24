@@ -14,4 +14,5 @@ pub use keys::{
     SECRET_KEY_SEED_BYTES, SecretKeySeed, TR_BYTES, pk_decode, pk_encode, sk_decode, sk_encode,
 };
 pub use poly::{bit_pack, bit_unpack, simple_bit_pack, simple_bit_unpack};
+pub(crate) use shared::bit_length;
 pub use signature::{EncodedSignatureParts, sig_decode, sig_encode, w1_encode};

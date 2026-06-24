@@ -11,13 +11,23 @@ use crate::params::{
     ParameterSetId, Q, ZETA,
 };
 use crate::poly::{NttPoly, Poly, PolyMatrix, PolyVector};
+use crate::sampling::{
+    AlgorithmSamplingLimits, ExpandASeed, ExpandMaskSeed, ExpandSSeed,
+    REJ_BOUNDED_POLY_MIN_LOOP_LIMIT, REJ_BOUNDED_POLY_MIN_XOF_BYTES, REJ_NTT_POLY_MIN_LOOP_LIMIT,
+    REJ_NTT_POLY_MIN_XOF_BYTES, RejBoundedPolySeed, RejNttPolySeed, SAMPLE_IN_BALL_MIN_LOOP_LIMIT,
+    SAMPLE_IN_BALL_MIN_XOF_BYTES, SamplingLimits, expand_a, expand_a_with_limits, expand_mask,
+    expand_s, rej_bounded_poly, rej_bounded_poly_with_limits, rej_ntt_poly, sample_in_ball,
+    sample_in_ball_with_limits,
+};
 use crate::verify::verify_lengths;
+use crate::xof::{shake128, shake256};
 
 mod algebra;
 mod encoding;
 mod ntt;
 mod params;
 mod rounding;
+mod sampling;
 mod verify;
 
 fn poly_with_coefficients(entries: &[(usize, i32)]) -> Poly {

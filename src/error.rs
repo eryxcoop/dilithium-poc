@@ -40,6 +40,27 @@ pub enum DilithiumError {
     },
     /// The requested ML-DSA parameter set is unknown or not enabled.
     InvalidParameterSet,
+    /// A caller requested an optional FIPS limit smaller than the minimum
+    /// bound allowed by Table 3.
+    LimitTooSmall {
+        /// Human-readable algorithm name.
+        algorithm: &'static str,
+        /// Human-readable limit kind, such as `"loop iterations"` or `"xof bytes"`.
+        limit_kind: &'static str,
+        /// Minimum limit allowed by FIPS 204 Table 3.
+        minimum: usize,
+        /// Actual limit requested by the caller.
+        actual: usize,
+    },
+    /// An optional Table 3 limit was reached while sampling.
+    SamplingLimitExceeded {
+        /// Human-readable algorithm name.
+        algorithm: &'static str,
+        /// Human-readable limit kind, such as `"loop iterations"` or `"xof bytes"`.
+        limit_kind: &'static str,
+        /// Effective limit that was reached.
+        limit: usize,
+    },
     /// Placeholder for functionality planned in later milestones.
     Unsupported(&'static str),
 }

@@ -23,7 +23,7 @@ pub type PublicKeyHash = [u8; TR_BYTES];
 /// Decoded components of a FIPS 204 public key.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EncodedPublicKeyParts {
-    /// Public matrix seed `rho`.
+    /// Public matrix seed `ρ`.
     pub rho: Rho,
     /// Rounded public vector `t1` with dimension `k`.
     pub t1: PolyVector,
@@ -32,7 +32,7 @@ pub struct EncodedPublicKeyParts {
 /// Decoded components of a FIPS 204 expanded private key.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EncodedPrivateKeyParts {
-    /// Public matrix seed `rho`.
+    /// Public matrix seed `ρ`.
     pub rho: Rho,
     /// Secret-key seed `K` used by signing.
     pub secret_key_seed: SecretKeySeed,
