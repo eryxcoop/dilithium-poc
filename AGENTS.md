@@ -1,6 +1,15 @@
 # AGENTS.md
 
+@RTK.md
+
 Este repo es una POC de ML-DSA en Rust. La referencia normativa para el algoritmo es FIPS 204; la referencia normativa para PKIX/X.509 es RFC 9881.
+
+## Contexto operativo
+
+- Para comandos de shell en este repo, preferir `rtk <comando>` como proxy por defecto.
+- Snapshot auxiliar del repo para lectura por IA: `/Users/lorenzord/Documents/Codex/2026-06-24/ya-v/outputs/mi-repo.xml`.
+- `mi-repo.xml` es solo contexto read-only empaquetado por Repomix; no editarlo y no tratarlo como fuente de verdad si difiere de los archivos reales del repo.
+- La fuente de verdad para cambios y verificacion sigue siendo el arbol real del repositorio y las referencias normativas locales indicadas abajo.
 
 ## Como leer las fuentes
 
@@ -35,11 +44,11 @@ Constantes globales:
 
 Parameter sets:
 
-| Set | Categoria | `(k,l)` | `eta` | `tau` | `lambda` | `gamma1` | `gamma2` | `beta` | `omega` | pk | sk expanded | sig |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ML-DSA-44 | 2 | `(4,4)` | 2 | 39 | 128 | `2^17` | `(q-1)/88` | 78 | 80 | 1312 | 2560 | 2420 |
-| ML-DSA-65 | 3 | `(6,5)` | 4 | 49 | 192 | `2^19` | `(q-1)/32` | 196 | 55 | 1952 | 4032 | 3309 |
-| ML-DSA-87 | 5 | `(8,7)` | 2 | 60 | 256 | `2^19` | `(q-1)/32` | 120 | 75 | 2592 | 4896 | 4627 |
+| Set       | Categoria | `(k,l)` | `eta` | `tau` | `lambda` | `gamma1` | `gamma2`   | `beta` | `omega` | pk   | sk expanded | sig  |
+| --------- | --------- | ------- | ----- | ----- | -------- | -------- | ---------- | ------ | ------- | ---- | ----------- | ---- |
+| ML-DSA-44 | 2         | `(4,4)` | 2     | 39    | 128      | `2^17`   | `(q-1)/88` | 78     | 80      | 1312 | 2560        | 2420 |
+| ML-DSA-65 | 3         | `(6,5)` | 4     | 49    | 192      | `2^19`   | `(q-1)/32` | 196    | 55      | 1952 | 4032        | 3309 |
+| ML-DSA-87 | 5         | `(8,7)` | 2     | 60    | 256      | `2^19`   | `(q-1)/32` | 120    | 75      | 2592 | 4896        | 4627 |
 
 FIPS tambien lista entropia del desafio y repeticiones esperadas:
 
@@ -117,12 +126,12 @@ Verify interno:
 
 Por defecto, no limitar loops ni bytes XOF. Si una implementacion decide limitar, no usar limites menores que:
 
-| Algoritmo | Iteraciones minimas | Bytes XOF minimos |
-| --- | ---: | ---: |
-| `ML-DSA.Sign_internal` | 814 | N/A |
-| `RejBoundedPoly` | 481 | 481 |
-| `RejNTTPoly` | 298 | 894 |
-| `SampleInBall` | 121 | 221 |
+| Algoritmo              | Iteraciones minimas | Bytes XOF minimos |
+| ---------------------- | ------------------: | ----------------: |
+| `ML-DSA.Sign_internal` |                 814 |               N/A |
+| `RejBoundedPoly`       |                 481 |               481 |
+| `RejNTTPoly`           |                 298 |               894 |
+| `SampleInBall`         |                 121 |               221 |
 
 Si se alcanza un limite, destruir intermedios y devolver siempre el mismo error/valor para ese caso.
 
