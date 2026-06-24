@@ -11,3 +11,11 @@ experimental-params = []
 instrumentation = []
 
 [dependencies]
+sha3 = "0.10"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "sampling"
+harness = false

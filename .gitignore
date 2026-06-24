@@ -20,3 +20,6 @@
 # Temporary generated text from PDFs or experiments
 /tmp/
 *.tmp
+
+# Other things
+RTK.md

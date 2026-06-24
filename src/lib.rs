@@ -13,6 +13,7 @@ pub mod round;
 pub mod types;
 mod validation;
 pub mod verify;
+pub mod xof;
 
 #[cfg(test)]
 mod tests;
