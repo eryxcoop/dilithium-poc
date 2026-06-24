@@ -5,7 +5,9 @@
 //! back into `R_q`, and perform pointwise arithmetic in the transform domain.
 
 mod domain;
+mod matrix;
 mod tables;
 mod transform;
 
 pub use domain::NttPoly;
+pub use matrix::NttMatrix;
