@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 
-use dilithium_poc::ml_dsa::{KeyPair, verify};
+use dilithium_poc::ml_dsa::KeyPair;
 use dilithium_poc::params::{PARAMETER_SETS, ParameterSet};
 
 fn criterion() -> Criterion {
@@ -96,13 +96,11 @@ fn bench_verify(c: &mut Criterion) {
             &parameter_set,
             |b, &_ps| {
                 b.iter(|| {
-                    verify(
-                        black_box(key_pair.public_key()),
+                    black_box(key_pair.public_key()).verify(
                         black_box(&message),
                         black_box(&signature),
                         black_box(b"m7"),
-                    )
-                    .unwrap();
+                    );
                 });
             },
         );

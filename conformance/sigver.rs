@@ -1,6 +1,6 @@
 //! ACVP sigVer vector checks.
 
-use crate::ml_dsa::{PublicKey, Signature, verify};
+use crate::ml_dsa::{PublicKey, Signature};
 use crate::params::ParameterSet;
 
 use super::fixtures::{SIGVER_EXPECTED, SIGVER_PROMPT};
@@ -55,11 +55,9 @@ fn verify_acvp_signature(parameter_set: ParameterSet, test: &SigVerPromptCase) -
         Err(_) => return false,
     };
 
-    verify(
-        &public_key,
+    public_key.verify(
         &hex_bytes(required(&test.message)),
         &signature,
         &hex_bytes(required(&test.context)),
     )
-    .unwrap_or(false)
 }

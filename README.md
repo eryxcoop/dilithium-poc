@@ -96,7 +96,7 @@ When working through Codex/RTK in this repository, prefix shell commands with
 ## Basic API Example
 
 ```rust
-use dilithium_poc::ml_dsa::{KeyPair, verify};
+use dilithium_poc::ml_dsa::KeyPair;
 use dilithium_poc::params::ML_DSA_44;
 
 let key_pair = KeyPair::generate(ML_DSA_44).unwrap();
@@ -104,7 +104,7 @@ let message = b"hello ML-DSA";
 let context = b"example";
 
 let signature = key_pair.private_key().sign(message, context).unwrap();
-let ok = verify(key_pair.public_key(), message, &signature, context).unwrap();
+let ok = key_pair.public_key().verify(message, &signature, context);
 
 assert!(ok);
 ```

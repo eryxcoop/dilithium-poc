@@ -1,5 +1,5 @@
 use super::*;
-use crate::ml_dsa::{KeyPair, PrivateKey, verify};
+use crate::ml_dsa::{KeyPair, PrivateKey};
 
 const TEST_SEED: [u8; 32] = [
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
@@ -45,7 +45,11 @@ fn deterministic_signature_verifies_and_reports_attempts() {
         .unwrap();
 
     assert!(signed.report().attempts() >= 1);
-    assert!(verify(key_pair.public_key(), message, signed.signature(), context).unwrap());
+    assert!(
+        key_pair
+            .public_key()
+            .verify(message, signed.signature(), context)
+    );
 }
 
 #[test]
@@ -60,13 +64,9 @@ fn deterministic_signing_reports_attempts_for_all_parameter_sets() {
 
         assert!(signed.report().attempts() >= 1);
         assert!(
-            verify(
-                key_pair.public_key(),
-                message.as_bytes(),
-                signed.signature(),
-                b"m4"
-            )
-            .unwrap()
+            key_pair
+                .public_key()
+                .verify(message.as_bytes(), signed.signature(), b"m4")
         );
     }
 }
@@ -79,7 +79,11 @@ fn hedged_signature_verifies() {
         .sign(b"m4 hedged signing", b"")
         .unwrap();
 
-    assert!(verify(key_pair.public_key(), b"m4 hedged signing", &signature, b"").unwrap());
+    assert!(
+        key_pair
+            .public_key()
+            .verify(b"m4 hedged signing", &signature, b"")
+    );
 }
 
 #[test]
@@ -91,17 +95,21 @@ fn altered_message_signature_or_public_key_fails_verification() {
         .sign_deterministic_for_test(message, b"ctx")
         .unwrap();
 
-    assert!(!verify(key_pair.public_key(), b"messagf", &signature, b"ctx").unwrap());
+    assert!(!key_pair.public_key().verify(b"messagf", &signature, b"ctx"));
 
     let mut altered_signature = signature.as_bytes().to_vec();
     altered_signature[0] ^= 0x01;
     let altered_signature = Signature::from_raw(ML_DSA_44, altered_signature).unwrap();
-    assert!(!verify(key_pair.public_key(), message, &altered_signature, b"ctx").unwrap());
+    assert!(
+        !key_pair
+            .public_key()
+            .verify(message, &altered_signature, b"ctx")
+    );
 
     let mut altered_public_key = key_pair.public_key().as_bytes().to_vec();
     altered_public_key[0] ^= 0x01;
     let altered_public_key = PublicKey::from_raw(ML_DSA_44, altered_public_key).unwrap();
-    assert!(!verify(&altered_public_key, message, &signature, b"ctx").unwrap());
+    assert!(!altered_public_key.verify(message, &signature, b"ctx"));
 }
 
 #[test]
@@ -113,8 +121,16 @@ fn context_is_part_of_the_signed_domain() {
         .sign_deterministic_for_test(message, b"domain-a")
         .unwrap();
 
-    assert!(verify(key_pair.public_key(), message, &signature, b"domain-a").unwrap());
-    assert!(!verify(key_pair.public_key(), message, &signature, b"domain-b").unwrap());
+    assert!(
+        key_pair
+            .public_key()
+            .verify(message, &signature, b"domain-a")
+    );
+    assert!(
+        !key_pair
+            .public_key()
+            .verify(message, &signature, b"domain-b")
+    );
 }
 
 #[test]
@@ -127,13 +143,9 @@ fn verifier_rejects_parameter_set_mismatch() {
         .unwrap();
 
     assert!(
-        !verify(
-            public_key_pair.public_key(),
-            b"parameter set",
-            &signature,
-            b""
-        )
-        .unwrap()
+        !public_key_pair
+            .public_key()
+            .verify(b"parameter set", &signature, b"")
     );
 }
 
@@ -155,13 +167,9 @@ fn verifier_rejects_structurally_valid_signature_when_z_exceeds_infinity_norm_bo
     let out_of_bounds_signature = Signature::from_raw(ML_DSA_44, encoded).unwrap();
 
     assert!(
-        !verify(
-            key_pair.public_key(),
-            message,
-            &out_of_bounds_signature,
-            b""
-        )
-        .unwrap()
+        !key_pair
+            .public_key()
+            .verify(message, &out_of_bounds_signature, b"")
     );
 }
 
@@ -186,12 +194,9 @@ fn context_longer_than_255_bytes_is_rejected() {
         .private_key()
         .sign_deterministic_for_test(b"message", b"")
         .unwrap();
-    assert_eq!(
-        verify(key_pair.public_key(), b"message", &signature, &too_long).unwrap_err(),
-        DilithiumError::InvalidLength {
-            expected: 255,
-            actual: 256,
-            item: "context",
-        }
+    assert!(
+        !key_pair
+            .public_key()
+            .verify(b"message", &signature, &too_long)
     );
 }

@@ -14,4 +14,3 @@ mod verify;
 
 pub use keygen::KeygenSeed;
 pub use types::{KeyPair, PrivateKey, PublicKey, Signature, SignatureWithReport, SigningReport};
-pub use verify::{verify, verify_lengths};

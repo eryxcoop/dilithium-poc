@@ -6,7 +6,7 @@ use crate::encoding::{
 };
 use crate::error::DilithiumError;
 use crate::hints::HintsVector;
-use crate::ml_dsa::{PublicKey, Signature, verify_lengths};
+use crate::ml_dsa::{PublicKey, Signature};
 use crate::params::{
     CoreParams, D, EncodedSizes, ML_DSA_44, ML_DSA_65, ML_DSA_87, N, PARAMETER_SETS, ParameterSet,
     ParameterSetId, Q, ZETA,
@@ -29,7 +29,6 @@ mod ntt;
 mod params;
 mod rounding;
 mod sampling;
-mod verify;
 
 fn poly_with_coefficients(entries: &[(usize, i32)]) -> Poly {
     let mut coeffs = [Coefficient::default(); N];
