@@ -5,16 +5,17 @@ use crate::error::DilithiumResult;
 use crate::params::ParameterSet;
 use crate::sampling::{ExpandASeed, expand_a, sample_in_ball};
 
-use super::algebra::{
-    infinity_norm_at_least, multiply_by_2_power_d, multiply_ntt_matrix_ntt_vector, ntt_vector,
-    scalar_multiply_ntt_vector,
-};
 use super::context::format_message;
 use super::keygen::public_key_hash;
 use super::sign::{commitment_hash, message_representative};
 use super::types::{PublicKey, Signature};
 
 /// Verifies an ML-DSA signature for a byte-aligned message and context.
+///
+/// The `context` argument is the FIPS 204 pure ML-DSA context string. It must
+/// match the context used during signing; a valid signature for one context
+/// does not verify under a different context. Pass `b""` for the default
+/// context, including RFC 9881 PKIX uses.
 ///
 /// This is the external FIPS 204 `ML-DSA.Verify` path for pure ML-DSA. It
 /// returns an error only for API-level failures such as a context longer than
@@ -53,18 +54,18 @@ pub fn verify(
         Err(_) => return Ok(false),
     };
 
-    let z_hat = ntt_vector(&signature_parts.z);
-    let a_z = match multiply_ntt_matrix_ntt_vector(&a_hat, &z_hat, parameter_set) {
+    let z_hat = signature_parts.z.ntt()?;
+    let a_z = match a_hat.multiply_ntt_vector(&z_hat, parameter_set) {
         Ok(value) => value,
         Err(_) => return Ok(false),
     };
     let c_hat = c.ntt();
-    let t1_times_2d = match multiply_by_2_power_d(&public_parts.t1) {
+    let t1_times_2d = match public_parts.t1.multiply_by_2_power_d() {
         Ok(value) => value,
         Err(_) => return Ok(false),
     };
-    let t1_hat = ntt_vector(&t1_times_2d);
-    let c_t1 = match scalar_multiply_ntt_vector(&c_hat, &t1_hat, parameter_set.core.k) {
+    let t1_hat = t1_times_2d.ntt()?;
+    let c_t1 = match c_hat.multiply_ntt_vector(&t1_hat, parameter_set.core.k) {
         Ok(value) => value,
         Err(_) => return Ok(false),
     };
@@ -81,10 +82,10 @@ pub fn verify(
         Err(_) => return Ok(false),
     };
 
-    Ok(!infinity_norm_at_least(
-        &signature_parts.z,
-        parameter_set.core.gamma1 - parameter_set.core.beta,
-    ) && c_tilde_prime == signature_parts.c_tilde)
+    Ok(!signature_parts
+        .z
+        .infinity_norm_at_least(parameter_set.core.gamma1 - parameter_set.core.beta)
+        && c_tilde_prime == signature_parts.c_tilde)
 }
 
 /// Returns `false` unless `public_key` and `signature` have exact FIPS 204 sizes.

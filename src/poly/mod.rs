@@ -14,5 +14,6 @@ pub use coeffs::Coefficients;
 pub use matrix::PolyMatrix;
 pub use ntt::NttMatrix;
 pub use ntt::NttPoly;
+pub use ntt::NttPolyVector;
 pub use polynomial::Poly;
 pub use vector::PolyVector;

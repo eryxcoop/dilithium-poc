@@ -9,9 +9,19 @@ const MAX_CONTEXT_BYTES: usize = 255;
 ///
 /// FIPS 204 Algorithms 2 and 3 prepend
 /// `IntegerToBytes(0, 1) || IntegerToBytes(|ctx|, 1) || ctx` before the
-/// message. The standard describes `M'` as a bit string; this POC accepts
-/// byte-aligned messages, so the equivalent byte string is passed directly into
-/// SHAKE256 by the internal algorithms.
+/// message. The `ctx` value is an optional domain-separation string supplied by
+/// the caller: the same message signed under one context will not verify under
+/// a different context. It is not external metadata; it is part of the bytes
+/// hashed by the internal ML-DSA algorithms.
+///
+/// The leading `IntegerToBytes(0, 1)` selects pure ML-DSA, not HashML-DSA. The
+/// one-byte context length limits `ctx` to at most 255 bytes. RFC 9881 PKIX
+/// uses the default empty context for certificates, CRLs, OCSP, and related
+/// PKIX signatures.
+///
+/// The standard describes `M'` as a bit string; this POC accepts byte-aligned
+/// messages, so the equivalent byte string is passed directly into SHAKE256 by
+/// the internal algorithms.
 pub(crate) fn format_message(message: &[u8], context: &[u8]) -> DilithiumResult<Vec<u8>> {
     ensure_context_len(context)?;
 

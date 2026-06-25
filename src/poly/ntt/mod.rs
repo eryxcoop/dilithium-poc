@@ -8,6 +8,8 @@ mod domain;
 mod matrix;
 mod tables;
 mod transform;
+mod vector;
 
 pub use domain::NttPoly;
 pub use matrix::NttMatrix;
+pub use vector::NttPolyVector;

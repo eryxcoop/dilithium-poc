@@ -8,7 +8,6 @@ use crate::params::ParameterSet;
 use crate::sampling::{ExpandASeed, ExpandSSeed, expand_a, expand_s};
 use crate::xof::shake256;
 
-use super::algebra::{multiply_ntt_matrix_vector, power2_round_vector};
 use super::random::random_bytes;
 use super::types::{KeyPair, PrivateKey, PublicKey};
 
@@ -37,17 +36,19 @@ pub fn keygen_from_seed(
 
     let a_hat = expand_a(ExpandASeed::new(rho), parameter_set)?;
     let (s1, s2) = expand_s(ExpandSSeed::new(rho_prime), parameter_set)?;
-    let t = multiply_ntt_matrix_vector(&a_hat, &s1, parameter_set)?.checked_add(&s2)?;
-    let (t1, t0) = power2_round_vector(&t, parameter_set)?;
+    let t = a_hat
+        .multiply_vector(&s1, parameter_set)?
+        .checked_add(&s2)?;
+    let (t1, t0) = t.power2_round(parameter_set)?;
 
     let public_key_bytes = pk_encode(rho, &t1, parameter_set)?;
     let tr = public_key_hash(&public_key_bytes);
     let private_key_bytes = sk_encode(rho, secret_key_seed, tr, &s1, &s2, &t0, parameter_set)?;
 
-    Ok(KeyPair::new(
+    KeyPair::new(
         PublicKey::from_raw(parameter_set, public_key_bytes)?,
         PrivateKey::from_raw(parameter_set, private_key_bytes)?,
-    ))
+    )
 }
 
 fn expand_keygen_seed(parameter_set: ParameterSet, seed: [u8; KEYGEN_SEED_BYTES]) -> Vec<u8> {

@@ -9,10 +9,6 @@ use crate::sampling::{
 };
 use crate::xof::shake256;
 
-use super::algebra::{
-    high_bits_vector, infinity_norm_at_least, low_bits_vector, multiply_ntt_matrix_vector,
-    ntt_vector, scalar_multiply_ntt_vector,
-};
 use super::context::format_message;
 use super::random::random_bytes;
 use super::types::{PrivateKey, Signature, SignatureWithReport, SigningReport};
@@ -21,6 +17,12 @@ use super::types::{PrivateKey, Signature, SignatureWithReport, SigningReport};
 pub const SIGNING_RANDOMNESS_BYTES: usize = 32;
 
 /// Generates a hedged ML-DSA signature using fresh operating-system randomness.
+///
+/// The `context` argument is the FIPS 204 pure ML-DSA context string. It is
+/// prepended to the message with a domain separator and length byte before the
+/// internal message representative is hashed, so it cryptographically binds the
+/// signature to that context. Pass `b""` for the default context, including
+/// RFC 9881 PKIX uses.
 pub fn sign(
     private_key: &PrivateKey,
     message: &[u8],
@@ -37,6 +39,9 @@ pub fn sign(
 
 /// Generates an ML-DSA signature using caller-supplied `rnd` for KAT/ACVP tests.
 ///
+/// The `context` argument has the same domain-separation meaning as in
+/// [`sign`].
+///
 /// This is intentionally crate-private and compiled only for tests. The public
 /// API keeps hedged signing as the default and exposes only the deterministic
 /// all-zero variant for tests/instrumentation.
@@ -51,6 +56,9 @@ pub(crate) fn sign_with_randomness_for_test(
 }
 
 /// Generates a hedged ML-DSA signature and returns aggregate instrumentation.
+///
+/// The `context` argument has the same domain-separation meaning as in
+/// [`sign`].
 #[cfg(feature = "instrumentation")]
 pub fn sign_with_report(
     private_key: &PrivateKey,
@@ -67,6 +75,9 @@ pub fn sign_with_report(
 
 /// Generates the deterministic FIPS 204 test variant with `rnd = {0}32`.
 ///
+/// The `context` argument has the same domain-separation meaning as in
+/// [`sign`].
+///
 /// This function is exposed only for crate tests or the `instrumentation`
 /// feature. Normal signing should use [`sign`], which follows the hedged
 /// external algorithm.
@@ -80,6 +91,9 @@ pub fn sign_deterministic_for_test(
 }
 
 /// Deterministic signing with aggregate rejection-loop instrumentation.
+///
+/// The `context` argument has the same domain-separation meaning as in
+/// [`sign`].
 #[cfg(any(test, feature = "instrumentation"))]
 pub fn sign_deterministic_for_test_with_report(
     private_key: &PrivateKey,
@@ -104,9 +118,9 @@ fn sign_with_report_internal(
     let private_parts = sk_decode(private_key.as_bytes(), parameter_set)?;
     let formatted_message = format_message(message, context)?;
 
-    let s1_hat = ntt_vector(&private_parts.s1);
-    let s2_hat = ntt_vector(&private_parts.s2);
-    let t0_hat = ntt_vector(&private_parts.t0);
+    let s1_hat = private_parts.s1.ntt()?;
+    let s2_hat = private_parts.s2.ntt()?;
+    let t0_hat = private_parts.t0.ntt()?;
     let a_hat = expand_a(ExpandASeed::new(private_parts.rho), parameter_set)?;
     let mu = message_representative(&private_parts.tr, &formatted_message);
     let rho_second = signing_mask_seed(&private_parts.secret_key_seed, &randomness, &mu);
@@ -126,8 +140,8 @@ fn sign_with_report_internal(
         let (y, y_report) = sampled_y.into_parts();
         report.absorb_sampling(y_report);
 
-        let w = multiply_ntt_matrix_vector(&a_hat, &y, parameter_set)?;
-        let w1 = high_bits_vector(&w, parameter_set)?;
+        let w = a_hat.multiply_vector(&y, parameter_set)?;
+        let w1 = w.high_bits(parameter_set)?;
         let c_tilde = commitment_hash(&mu, &w1, parameter_set)?;
         let sampled_c =
             sample_in_ball_with_limits(&c_tilde, parameter_set, SamplingLimits::default())?;
@@ -135,22 +149,22 @@ fn sign_with_report_internal(
         report.absorb_sampling(c_report);
 
         let c_hat = c.ntt();
-        let c_s1 = scalar_multiply_ntt_vector(&c_hat, &s1_hat, parameter_set.core.l)?;
-        let c_s2 = scalar_multiply_ntt_vector(&c_hat, &s2_hat, parameter_set.core.k)?;
+        let c_s1 = c_hat.multiply_ntt_vector(&s1_hat, parameter_set.core.l)?;
+        let c_s2 = c_hat.multiply_ntt_vector(&s2_hat, parameter_set.core.k)?;
         let z = y.checked_add(&c_s1)?;
         let w_minus_c_s2 = w.checked_sub(&c_s2)?;
-        let r0 = low_bits_vector(&w_minus_c_s2, parameter_set)?;
+        let r0 = w_minus_c_s2.low_bits(parameter_set)?;
 
-        if infinity_norm_at_least(&z, parameter_set.core.gamma1 - parameter_set.core.beta)
-            || infinity_norm_at_least(&r0, parameter_set.core.gamma2 - parameter_set.core.beta)
+        if z.infinity_norm_at_least(parameter_set.core.gamma1 - parameter_set.core.beta)
+            || r0.infinity_norm_at_least(parameter_set.core.gamma2 - parameter_set.core.beta)
         {
             report.record_z_or_r0_rejection();
             kappa = next_mask_counter(kappa, parameter_set.core.l)?;
             continue;
         }
 
-        let c_t0 = scalar_multiply_ntt_vector(&c_hat, &t0_hat, parameter_set.core.k)?;
-        if infinity_norm_at_least(&c_t0, parameter_set.core.gamma2) {
+        let c_t0 = c_hat.multiply_ntt_vector(&t0_hat, parameter_set.core.k)?;
+        if c_t0.infinity_norm_at_least(parameter_set.core.gamma2) {
             report.record_ct0_or_hint_rejection();
             kappa = next_mask_counter(kappa, parameter_set.core.l)?;
             continue;

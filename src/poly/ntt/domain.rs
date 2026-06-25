@@ -4,9 +4,11 @@ use core::array;
 use core::ops::{Add, Mul};
 
 use crate::coefficient::Coefficient;
+use crate::error::DilithiumResult;
 use crate::params::N;
 use crate::poly::ntt::transform::inverse_impl;
-use crate::poly::{Coefficients, Poly};
+use crate::poly::{Coefficients, NttPolyVector, Poly, PolyVector};
+use crate::validation::ensure_dimension;
 
 /// One element of `T_q`, the transform domain used by the ML-DSA NTT.
 ///
@@ -66,6 +68,44 @@ impl NttPoly {
     /// coefficient domain [`Poly`].
     pub fn inverse_ntt(&self) -> Poly {
         inverse_impl(self)
+    }
+
+    /// Computes a dot product in the NTT domain.
+    ///
+    /// Matrix-vector multiplication uses this to accumulate one row of `Â`
+    /// against an NTT-domain vector. The inputs must already have matching
+    /// lengths; dimension checks live at the matrix/vector boundary.
+    pub(crate) fn dot_product(lhs: &[Self], rhs: &[Self]) -> Self {
+        let mut sum = Self::zero();
+        for (lhs, rhs) in lhs.iter().zip(rhs.iter()) {
+            let product = lhs * rhs;
+            sum = &sum + &product;
+        }
+        sum
+    }
+
+    /// Multiplies this NTT-domain polynomial by every polynomial in an NTT vector.
+    ///
+    /// Signing and verification use this for challenge products such as `c·s₁`,
+    /// `c·s₂`, `c·t₀`, and `c·t₁·2ᵈ`. Each pointwise product is converted back
+    /// to coefficient representation before returning.
+    pub(crate) fn multiply_ntt_vector(
+        &self,
+        vector_hat: &NttPolyVector,
+        expected_dimension: usize,
+    ) -> DilithiumResult<PolyVector> {
+        ensure_dimension(
+            "NTT vector dimension",
+            expected_dimension,
+            vector_hat.dimension(),
+        )?;
+
+        let products = vector_hat
+            .iter()
+            .map(|poly_hat| (self * poly_hat).inverse_ntt())
+            .collect();
+
+        PolyVector::from_polys(expected_dimension, products)
     }
 }
 

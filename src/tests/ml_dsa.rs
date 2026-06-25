@@ -1,6 +1,6 @@
 use super::*;
 use crate::ml_dsa::{
-    keygen, keygen_from_seed, sign, sign_deterministic_for_test,
+    KeyPair, PrivateKey, keygen, keygen_from_seed, sign, sign_deterministic_for_test,
     sign_deterministic_for_test_with_report, verify,
 };
 
@@ -20,6 +20,19 @@ fn keygen_from_seed_produces_exact_fips_sizes() {
     assert_eq!(
         key_pair.private_key().as_bytes().len(),
         ML_DSA_44.sizes.private_key_bytes
+    );
+}
+
+#[test]
+fn key_pair_rejects_mismatched_parameter_sets() {
+    let public_key =
+        PublicKey::from_raw(ML_DSA_44, vec![0u8; ML_DSA_44.sizes.public_key_bytes]).unwrap();
+    let private_key =
+        PrivateKey::from_raw(ML_DSA_65, vec![0u8; ML_DSA_65.sizes.private_key_bytes]).unwrap();
+
+    assert_eq!(
+        KeyPair::new(public_key, private_key).unwrap_err(),
+        DilithiumError::InvalidParameterSet
     );
 }
 

@@ -5,7 +5,6 @@
 //! and signature encodings remain the FIPS 204 byte strings represented by
 //! [`PublicKey`], [`PrivateKey`], and [`Signature`].
 
-mod algebra;
 mod context;
 mod keygen;
 mod random;

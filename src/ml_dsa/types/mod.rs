@@ -8,6 +8,7 @@ pub use private_key::PrivateKey;
 pub use public_key::PublicKey;
 pub use signature::Signature;
 
+use crate::error::{DilithiumError, DilithiumResult};
 use crate::sampling::SamplingReport;
 
 /// Raw FIPS 204 public/private key pair.
@@ -18,11 +19,15 @@ pub struct KeyPair {
 }
 
 impl KeyPair {
-    pub(crate) fn new(public_key: PublicKey, private_key: PrivateKey) -> Self {
-        Self {
+    pub(crate) fn new(public_key: PublicKey, private_key: PrivateKey) -> DilithiumResult<Self> {
+        if public_key.parameter_set() != private_key.parameter_set() {
+            return Err(DilithiumError::InvalidParameterSet);
+        }
+
+        Ok(Self {
             public_key,
             private_key,
-        }
+        })
     }
 
     /// Returns the raw FIPS 204 public key.

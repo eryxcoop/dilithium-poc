@@ -11,7 +11,7 @@ use crate::params::{
     CoreParams, D, EncodedSizes, ML_DSA_44, ML_DSA_65, ML_DSA_87, N, PARAMETER_SETS, ParameterSet,
     ParameterSetId, Q, ZETA,
 };
-use crate::poly::{NttPoly, Poly, PolyMatrix, PolyVector};
+use crate::poly::{NttPoly, NttPolyVector, Poly, PolyMatrix, PolyVector};
 use crate::sampling::{
     AlgorithmSamplingLimits, ExpandASeed, ExpandMaskSeed, ExpandSSeed,
     REJ_BOUNDED_POLY_MIN_LOOP_LIMIT, REJ_BOUNDED_POLY_MIN_XOF_BYTES, REJ_NTT_POLY_MIN_LOOP_LIMIT,

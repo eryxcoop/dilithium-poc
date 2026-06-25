@@ -2,8 +2,8 @@
 
 use crate::error::DilithiumResult;
 use crate::params::ParameterSet;
-use crate::poly::NttPoly;
-use crate::validation::ensure_len;
+use crate::poly::{NttPoly, NttPolyVector, PolyVector};
+use crate::validation::{ensure_dimension, ensure_len};
 
 /// Matrix of transform-domain polynomials with `rows × cols` dimensions.
 ///
@@ -82,5 +82,45 @@ impl NttMatrix {
     /// Returns the row-major polynomial slice.
     pub fn polys(&self) -> &[NttPoly] {
         &self.polys
+    }
+
+    /// Multiplies this NTT-domain matrix by a coefficient-domain vector.
+    ///
+    /// This corresponds to products such as `Âs₁` in key generation and `Ây`
+    /// in signing. The vector is transformed with [`PolyVector::ntt`] before
+    /// delegating to [`Self::multiply_ntt_vector`].
+    pub(crate) fn multiply_vector(
+        &self,
+        vector: &PolyVector,
+        parameter_set: ParameterSet,
+    ) -> DilithiumResult<PolyVector> {
+        let vector_hat = vector.ntt()?;
+        self.multiply_ntt_vector(&vector_hat, parameter_set)
+    }
+
+    /// Multiplies this NTT-domain matrix by an NTT-domain vector.
+    ///
+    /// The matrix must have shape `k × l`, and the vector must have dimension
+    /// `l` for the parameter set. Each row product is computed in the NTT domain
+    /// and converted back to coefficient representation with inverse NTT.
+    pub(crate) fn multiply_ntt_vector(
+        &self,
+        vector_hat: &NttPolyVector,
+        parameter_set: ParameterSet,
+    ) -> DilithiumResult<PolyVector> {
+        ensure_dimension("NTT matrix rows", parameter_set.core.k, self.rows)?;
+        ensure_dimension("NTT matrix columns", parameter_set.core.l, self.cols)?;
+        ensure_dimension(
+            "NTT vector dimension",
+            parameter_set.core.l,
+            vector_hat.dimension(),
+        )?;
+
+        let mut rows = Vec::with_capacity(parameter_set.core.k);
+        for row in self.rows_iter() {
+            rows.push(NttPoly::dot_product(row, vector_hat.polys()).inverse_ntt());
+        }
+
+        PolyVector::from_polys(parameter_set.core.k, rows)
     }
 }

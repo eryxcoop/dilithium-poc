@@ -73,3 +73,34 @@ fn ntt_domain_supports_accessors_and_pointwise_arithmetic() {
     assert!(sum.iter().all(|coeff| coeff == Coefficient::from(3)));
     assert!(product.iter().all(|coeff| coeff == Coefficient::from(2)));
 }
+
+#[test]
+fn ntt_poly_vector_tracks_dimension_and_inverse_transform() {
+    let first = poly_with_coefficients(&[(0, 1), (5, 42)]);
+    let second = poly_with_coefficients(&[(1, 7), (255, Q as i32 - 3)]);
+    let vector = NttPolyVector::from_polys(2, vec![first.ntt(), second.ntt()]).unwrap();
+
+    assert_eq!(vector.dimension(), 2);
+    assert!(!vector.is_empty());
+    assert_eq!(vector.iter().len(), 2);
+    assert!(vector.get(1).is_some());
+
+    let restored = vector.inverse_ntt().unwrap();
+    assert_eq!(restored.dimension(), 2);
+    assert_eq!(restored.get(0), Some(&first));
+    assert_eq!(restored.get(1), Some(&second));
+}
+
+#[test]
+fn ntt_poly_vector_rejects_wrong_dimension() {
+    let error = NttPolyVector::from_polys(2, vec![NttPoly::zero()]).unwrap_err();
+
+    assert_eq!(
+        error,
+        DilithiumError::InvalidLength {
+            expected: 2,
+            actual: 1,
+            item: "NTT polynomial vector",
+        }
+    );
+}
