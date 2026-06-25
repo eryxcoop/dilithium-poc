@@ -12,7 +12,7 @@ mod sign;
 mod types;
 mod verify;
 
-pub use keygen::{keygen, keygen_from_seed};
+pub use keygen::{KeygenSeed, keygen, keygen_from_seed};
 pub use sign::sign;
 #[cfg(test)]
 pub(crate) use sign::sign_with_randomness_for_test;

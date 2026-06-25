@@ -1,8 +1,10 @@
 //! Raw FIPS 204 public-key wrapper.
 
+use crate::encoding::PublicKeyHash;
 use crate::error::DilithiumResult;
 use crate::params::ParameterSet;
 use crate::validation::ensure_len;
+use crate::xof::shake256;
 
 /// Raw FIPS 204 public key tagged with its ML-DSA parameter set.
 ///
@@ -39,5 +41,16 @@ impl PublicKey {
     /// Returns the raw FIPS 204 public-key bytes.
     pub fn as_bytes(&self) -> &[u8] {
         &self.bytes
+    }
+
+    /// Computes the FIPS 204 public-key hash `tr = H(pk, 64)`.
+    ///
+    /// Signing stores this value in the expanded private key and later hashes
+    /// `tr || M'` to bind signatures to the public key.
+    pub(crate) fn hash(&self) -> PublicKeyHash {
+        let digest = shake256(&self.bytes, 64);
+        let mut tr = [0u8; 64];
+        tr.copy_from_slice(&digest);
+        tr
     }
 }

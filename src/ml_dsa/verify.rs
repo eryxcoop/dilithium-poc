@@ -6,7 +6,6 @@ use crate::params::ParameterSet;
 use crate::sampling::{ExpandASeed, expand_a, sample_in_ball};
 
 use super::context::format_message;
-use super::keygen::public_key_hash;
 use super::sign::{commitment_hash, message_representative};
 use super::types::{PublicKey, Signature};
 
@@ -47,7 +46,7 @@ pub fn verify(
         Ok(a_hat) => a_hat,
         Err(_) => return Ok(false),
     };
-    let tr = public_key_hash(public_key.as_bytes());
+    let tr = public_key.hash();
     let mu = message_representative(&tr, &formatted_message);
     let c = match sample_in_ball(&signature_parts.c_tilde, parameter_set) {
         Ok(c) => c,
