@@ -1,11 +1,11 @@
 //! RFC 9881 `OneAsymmetricKey` and ML-DSA private-key CHOICE handling.
 
-use der::asn1::{AnyRef, ContextSpecificRef, OctetStringRef};
+use der::asn1::{AnyRef, BitStringRef, ContextSpecificRef, OctetStringRef};
 use der::{
     Decode, DecodeValue, Encode, EncodeValue, Header, Length, Reader, Sequence, Tag, TagMode,
     TagNumber, Tagged, Writer,
 };
-use pkcs8::PrivateKeyInfo;
+use pkcs8::{PrivateKeyInfo, PrivateKeyInfoRef};
 
 use crate::error::{DilithiumError, DilithiumResult};
 use crate::ml_dsa::{PrivateKey, PublicKey, keygen_from_seed};
@@ -114,13 +114,13 @@ pub fn parse_private_key_choice_with_options(
     match choice.tag() {
         Tag::ContextSpecific {
             constructed: false,
-            number: TagNumber::N0,
+            number: TagNumber(0),
         } => {
             let seed = fixed_seed(choice.value())?;
             Ok(PkixPrivateKey::Seed(seed))
         }
         Tag::OctetString => {
-            let expanded = OctetStringRef::from_der(der)
+            let expanded = <&OctetStringRef>::from_der(der)
                 .map_err(|_| DilithiumError::MalformedPkix("malformed expanded private key"))?;
             Ok(PkixPrivateKey::Expanded(PrivateKey::from_raw(
                 parameter_set,
@@ -163,9 +163,17 @@ pub fn encode_one_asymmetric_key(
     }
 
     let choice_der = encode_private_key_choice(private_key)?;
-    let mut private_key_info =
-        PrivateKeyInfo::new(algorithm_identifier(parameter_set)?, &choice_der);
-    private_key_info.public_key = public_key.map(PublicKey::as_bytes);
+    let private_key_octets = OctetStringRef::new(&choice_der)
+        .map_err(|_| DilithiumError::MalformedPkix("invalid private key OCTET STRING"))?;
+    let public_key_bits = public_key
+        .map(|public_key| {
+            BitStringRef::from_bytes(public_key.as_bytes())
+                .map_err(|_| DilithiumError::MalformedPkix("invalid public key BIT STRING"))
+        })
+        .transpose()?;
+    let mut private_key_info: PrivateKeyInfoRef<'_> =
+        PrivateKeyInfo::new(algorithm_identifier(parameter_set)?, private_key_octets);
+    private_key_info.public_key = public_key_bits;
     private_key_info
         .to_der()
         .map_err(|_| DilithiumError::MalformedPkix("failed to encode OneAsymmetricKey"))
@@ -185,18 +193,23 @@ pub fn parse_one_asymmetric_key_with_options(
     der: &[u8],
     consistency_check: ConsistencyCheck,
 ) -> DilithiumResult<DecodedOneAsymmetricKey> {
-    let private_key_info = PrivateKeyInfo::from_der(der)
+    let private_key_info = PrivateKeyInfoRef::from_der(der)
         .map_err(|_| DilithiumError::MalformedPkix("malformed OneAsymmetricKey DER"))?;
     validate_absent_parameters(&private_key_info.algorithm)?;
     let parameter_set = parameter_set_for_oid(private_key_info.algorithm.oid)?;
     let private_key = parse_private_key_choice_with_options(
         parameter_set,
-        private_key_info.private_key,
+        private_key_info.private_key.as_bytes(),
         consistency_check,
     )?;
     let public_key = private_key_info
         .public_key
-        .map(|bytes| PublicKey::from_raw(parameter_set, bytes.to_vec()))
+        .map(|bits| {
+            let bytes = bits.as_bytes().ok_or(DilithiumError::MalformedPkix(
+                "public key BIT STRING must be octet-aligned",
+            ))?;
+            PublicKey::from_raw(parameter_set, bytes.to_vec())
+        })
         .transpose()?;
     if consistency_check == ConsistencyCheck::Enforce {
         ensure_public_key_consistency(parameter_set, &private_key, public_key.as_ref())?;
@@ -212,7 +225,7 @@ fn encode_seed_choice(seed: &[u8; PRIVATE_KEY_SEED_BYTES]) -> DilithiumResult<Ve
     let octets = OctetStringRef::new(seed)
         .map_err(|_| DilithiumError::MalformedPkix("invalid seed OCTET STRING"))?;
     ContextSpecificRef {
-        tag_number: TagNumber::N0,
+        tag_number: TagNumber(0),
         tag_mode: TagMode::Implicit,
         value: &octets,
     }
@@ -295,13 +308,15 @@ fn ensure_public_key_consistency(
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct BothPrivateKeyRef<'a> {
-    seed: OctetStringRef<'a>,
-    expanded_key: OctetStringRef<'a>,
+    seed: &'a OctetStringRef,
+    expanded_key: &'a OctetStringRef,
 }
 
 impl<'a> DecodeValue<'a> for BothPrivateKeyRef<'a> {
+    type Error = der::Error;
+
     fn decode_value<R: Reader<'a>>(reader: &mut R, header: Header) -> der::Result<Self> {
-        reader.read_nested(header.length, |reader| {
+        reader.read_nested(header.length(), |reader| {
             Ok(Self {
                 seed: reader.decode()?,
                 expanded_key: reader.decode()?,

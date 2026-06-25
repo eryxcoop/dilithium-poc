@@ -1,6 +1,7 @@
+use std::hint::black_box;
 use std::time::Duration;
 
-use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 
 use dilithium_poc::ml_dsa::{
     keygen_from_seed, sign_deterministic_for_test, sign_deterministic_for_test_with_report, verify,

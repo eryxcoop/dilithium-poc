@@ -14,8 +14,8 @@
 //! - FIPS 204 defines their use as `G` and `H` in ML-DSA:
 //!   <https://doi.org/10.6028/NIST.FIPS.204>
 
-use sha3::digest::{ExtendableOutput, Update, XofReader};
-use sha3::{Shake128, Shake256};
+use shake::digest::{ExtendableOutput, Update, XofReader};
+use shake::{Shake128, Shake256};
 
 /// Computes `SHAKE128(input, output_len)`.
 pub fn shake128(input: &[u8], output_len: usize) -> Vec<u8> {

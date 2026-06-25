@@ -9,8 +9,8 @@ use crate::pkix::{
     validate_key_usage,
 };
 use der::Encode;
-use der::asn1::{AnyRef, BitStringRef};
-use pkcs8::PrivateKeyInfo;
+use der::asn1::{AnyRef, BitStringRef, OctetStringRef};
+use pkcs8::{PrivateKeyInfo, PrivateKeyInfoRef};
 use spki::{AlgorithmIdentifierRef, SubjectPublicKeyInfoRef};
 
 #[test]
@@ -81,9 +81,10 @@ fn rfc9881_rejects_parameters_inside_pkix_wrappers() {
     ));
 
     let choice_der = encode_private_key_choice(&PkixPrivateKey::Seed([11u8; 32])).unwrap();
-    let private_key_info_with_null = PrivateKeyInfo::new(algorithm_with_null, &choice_der)
-        .to_der()
-        .unwrap();
+    let private_key_octets = OctetStringRef::new(&choice_der).unwrap();
+    let private_key_info_with_null: PrivateKeyInfoRef<'_> =
+        PrivateKeyInfo::new(algorithm_with_null, private_key_octets);
+    let private_key_info_with_null = private_key_info_with_null.to_der().unwrap();
     assert!(matches!(
         parse_one_asymmetric_key(&private_key_info_with_null),
         Err(DilithiumError::MalformedPkix(_))

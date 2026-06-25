@@ -1,16 +1,15 @@
 //! FIPS 204 ML-DSA key generation.
 
-use rand_core::{OsRng, RngCore};
-
 use crate::encoding::{
     PublicKeyHash, Rho, SECRET_KEY_SEED_BYTES, SecretKeySeed, pk_encode, sk_encode,
 };
-use crate::error::{DilithiumError, DilithiumResult};
+use crate::error::DilithiumResult;
 use crate::params::ParameterSet;
 use crate::sampling::{ExpandASeed, ExpandSSeed, expand_a, expand_s};
 use crate::xof::shake256;
 
 use super::algebra::{multiply_ntt_matrix_vector, power2_round_vector};
+use super::random::random_bytes;
 use super::types::{KeyPair, PrivateKey, PublicKey};
 
 /// Number of random bytes consumed by `ML-DSA.KeyGen`.
@@ -21,11 +20,7 @@ pub const KEYGEN_SEED_BYTES: usize = 32;
 /// This is the external FIPS 204 `ML-DSA.KeyGen()` path: it samples a fresh
 /// 32-byte seed `ξ` and then delegates to [`keygen_from_seed`].
 pub fn keygen(parameter_set: ParameterSet) -> DilithiumResult<KeyPair> {
-    let mut seed = [0u8; KEYGEN_SEED_BYTES];
-    OsRng
-        .try_fill_bytes(&mut seed)
-        .map_err(|_| DilithiumError::Unsupported("random bit generation failed"))?;
-    keygen_from_seed(parameter_set, seed)
+    keygen_from_seed(parameter_set, random_bytes::<KEYGEN_SEED_BYTES>()?)
 }
 
 /// Generates an ML-DSA key pair from the FIPS 204 seed `ξ`.

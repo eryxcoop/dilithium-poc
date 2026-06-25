@@ -1,7 +1,5 @@
 //! FIPS 204 ML-DSA signing.
 
-use rand_core::{OsRng, RngCore};
-
 use crate::encoding::{sig_encode, sk_decode, w1_encode};
 use crate::error::{DilithiumError, DilithiumResult};
 use crate::hints::HintsVector;
@@ -16,6 +14,7 @@ use super::algebra::{
     ntt_vector, scalar_multiply_ntt_vector,
 };
 use super::context::format_message;
+use super::random::random_bytes;
 use super::types::{PrivateKey, Signature, SignatureWithReport, SigningReport};
 
 /// Number of per-message random bytes consumed by hedged signing.
@@ -28,8 +27,13 @@ pub fn sign(
     context: &[u8],
 ) -> DilithiumResult<Signature> {
     Ok(
-        sign_with_report_internal(private_key, message, context, signing_randomness()?)?
-            .into_signature(),
+        sign_with_report_internal(
+            private_key,
+            message,
+            context,
+            random_bytes::<SIGNING_RANDOMNESS_BYTES>()?,
+        )?
+        .into_signature(),
     )
 }
 
@@ -55,7 +59,12 @@ pub fn sign_with_report(
     message: &[u8],
     context: &[u8],
 ) -> DilithiumResult<SignatureWithReport> {
-    sign_with_report_internal(private_key, message, context, signing_randomness()?)
+    sign_with_report_internal(
+        private_key,
+        message,
+        context,
+        random_bytes::<SIGNING_RANDOMNESS_BYTES>()?,
+    )
 }
 
 /// Generates the deterministic FIPS 204 test variant with `rnd = {0}32`.
@@ -206,14 +215,6 @@ fn signing_mask_seed(
     let mut seed = [0u8; 64];
     seed.copy_from_slice(&digest);
     seed
-}
-
-fn signing_randomness() -> DilithiumResult<[u8; SIGNING_RANDOMNESS_BYTES]> {
-    let mut randomness = [0u8; SIGNING_RANDOMNESS_BYTES];
-    OsRng
-        .try_fill_bytes(&mut randomness)
-        .map_err(|_| DilithiumError::Unsupported("random bit generation failed"))?;
-    Ok(randomness)
 }
 
 fn next_mask_counter(current: u16, increment: usize) -> DilithiumResult<u16> {

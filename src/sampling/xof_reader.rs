@@ -12,7 +12,7 @@
 //! cap, the wrapper returns [`DilithiumError::SamplingLimitExceeded`] before
 //! consuming any additional bytes.
 
-use sha3::digest::XofReader;
+use shake::digest::XofReader;
 
 use crate::error::{DilithiumError, DilithiumResult};
 

@@ -8,6 +8,7 @@
 mod algebra;
 mod context;
 mod keygen;
+mod random;
 mod sign;
 mod types;
 mod verify;
