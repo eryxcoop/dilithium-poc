@@ -6,21 +6,23 @@ const ETA: i64 = 4;
 const L: usize = 5;
 const N: usize = 256;
 const SECRET_COEFFICIENTS: usize = L * N;
-const SAMPLES: usize = 512;
-const POSITIVE_BIAS_VALUES: [i64; 4] = [-1, 1, 3, 5];
-const NEGATIVE_BIAS_VALUES: [i64; 4] = [-5, -3, -1, 1];
+const AUDIT_SAMPLES: usize = 2_048;
+const SIGNATURE_SAMPLES: usize = 1_024;
+const PRNG_SEED: u64 = 0x5eed_5eed_d15a_b1a5;
 
 /// Runs the biased-mask classroom demo.
 pub fn run() -> ChallengeRun {
     let secret = secret_coefficients();
-    let bias_means = bias_means();
+    let mut rng = SplitMix64::new(PRNG_SEED);
+    let audit_samples = generate_mask_audit_samples(&mut rng);
+    let estimated_bias_means = estimate_bias_means(&audit_samples, SECRET_COEFFICIENTS);
     let mut sums_when_challenge_one = vec![0i64; SECRET_COEFFICIENTS];
     let mut counts_when_challenge_one = vec![0usize; SECRET_COEFFICIENTS];
 
-    for sample in 0..SAMPLES {
+    for _ in 0..SIGNATURE_SAMPLES {
         for index in 0..secret.len() {
-            let challenge = challenge_bit(sample, index);
-            let y = biased_mask(sample, index);
+            let challenge = rng.bit() as i64;
+            let y = biased_mask(&mut rng, index);
             let z = y + challenge * secret[index];
 
             if challenge == 1 {
@@ -33,7 +35,7 @@ pub fn run() -> ChallengeRun {
     let recovered = estimate_secret(
         &sums_when_challenge_one,
         &counts_when_challenge_one,
-        &bias_means,
+        &estimated_bias_means,
         ETA,
     );
     let success = recovered == secret;
@@ -42,17 +44,20 @@ pub fn run() -> ChallengeRun {
         .step(
             "Setup",
             format!(
-                "Toy signer keeps the ML-DSA-65 shape for s₁: l = {L}, n = {N}, η = {ETA}, so there are {SECRET_COEFFICIENTS} secret coefficients and {SAMPLES} signatures."
+                "Toy signer keeps the ML-DSA-65 shape for s₁: l = {L}, n = {N}, η = {ETA}, so there are {SECRET_COEFFICIENTS} secret coefficients."
             ),
         )
         .step(
-            "Biased sampler",
-            "The broken y sampler has position-dependent means: even flattened coefficients have E[yᵢ] = +2 and odd flattened coefficients have E[yᵢ] = -2.",
+            "Sampler audit",
+            format!(
+                "The attacker samples {AUDIT_SAMPLES} y vectors and estimates mean(yᵢ). First six estimated means are {:?}.",
+                rounded_prefix(&estimated_bias_means, 6)
+            ),
         )
         .step(
             "Estimator",
             format!(
-                "Conditioning on cᵢ = 1 gives E[zᵢ] ≈ E[yᵢ] + s₁ᵢ. Subtracting the known bias recovers all {SECRET_COEFFICIENTS} coefficients; first eight are {:?}.",
+                "From {SIGNATURE_SAMPLES} signatures, conditioning on cᵢ = 1 gives E[zᵢ] ≈ E[yᵢ] + s₁ᵢ. Subtracting the inferred bias recovers all {SECRET_COEFFICIENTS} coefficients; first eight are {:?}.",
                 &recovered[..8]
             ),
         )
@@ -73,18 +78,20 @@ pub fn run() -> ChallengeRun {
     )
 }
 
-fn challenge_bit(sample: usize, index: usize) -> i64 {
-    let _ = index;
-    if sample % 8 < 4 { 1 } else { 0 }
-}
-
-fn biased_mask(sample: usize, index: usize) -> i64 {
-    let values = if index.is_multiple_of(2) {
-        POSITIVE_BIAS_VALUES
-    } else {
-        NEGATIVE_BIAS_VALUES
-    };
-    values[(sample + index * 7) % values.len()]
+fn biased_mask(rng: &mut SplitMix64, index: usize) -> i64 {
+    let roll = rng.range(10);
+    match (index.is_multiple_of(2), roll) {
+        (true, 0..=4) => 4,
+        (true, 5..=6) => 2,
+        (true, 7) => 0,
+        (true, 8) => -2,
+        (true, _) => -4,
+        (false, 0..=4) => -4,
+        (false, 5..=6) => -2,
+        (false, 7) => 0,
+        (false, 8) => 2,
+        (false, _) => 4,
+    }
 }
 
 fn estimate_secret(
@@ -110,8 +117,59 @@ fn secret_coefficients() -> Vec<i64> {
         .collect()
 }
 
-fn bias_means() -> Vec<f64> {
-    (0..SECRET_COEFFICIENTS)
-        .map(|index| if index.is_multiple_of(2) { 2.0 } else { -2.0 })
+fn generate_mask_audit_samples(rng: &mut SplitMix64) -> Vec<Vec<i64>> {
+    (0..AUDIT_SAMPLES)
+        .map(|_| {
+            (0..SECRET_COEFFICIENTS)
+                .map(|index| biased_mask(rng, index))
+                .collect()
+        })
         .collect()
+}
+
+fn estimate_bias_means(mask_samples: &[Vec<i64>], coefficient_count: usize) -> Vec<f64> {
+    let mut sums = vec![0i64; coefficient_count];
+    for sample in mask_samples {
+        for (index, &value) in sample.iter().enumerate() {
+            sums[index] += value;
+        }
+    }
+
+    sums.into_iter()
+        .map(|sum| sum as f64 / mask_samples.len() as f64)
+        .collect()
+}
+
+fn rounded_prefix(values: &[f64], count: usize) -> Vec<f64> {
+    values
+        .iter()
+        .take(count)
+        .map(|value| (value * 100.0).round() / 100.0)
+        .collect()
+}
+
+struct SplitMix64 {
+    state: u64,
+}
+
+impl SplitMix64 {
+    fn new(seed: u64) -> Self {
+        Self { state: seed }
+    }
+
+    fn next(&mut self) -> u64 {
+        self.state = self.state.wrapping_add(0x9e37_79b9_7f4a_7c15);
+        let mut value = self.state;
+        value = (value ^ (value >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
+        value = (value ^ (value >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
+        value ^ (value >> 31)
+    }
+
+    fn range(&mut self, upper: u64) -> u64 {
+        self.next() % upper
+    }
+
+    fn bit(&mut self) -> u8 {
+        (self.next() >> 63) as u8
+    }
 }

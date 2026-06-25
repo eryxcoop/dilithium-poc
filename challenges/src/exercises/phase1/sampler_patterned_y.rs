@@ -1,16 +1,12 @@
 //! Exercise for `sampler_patterned_y`.
 
-/// Estimates toy `s₁` coefficients from a biased `y` sampler.
-///
-/// Inputs are aggregated over signatures and only include positions where
-/// `cᵢ = 1`. For each coefficient index:
-///
-/// ```text
-/// E[zᵢ | cᵢ = 1] ≈ E[yᵢ] + s₁ᵢ
-/// ```
-///
-/// Complete this by averaging `zᵢ`, subtracting the known `y` bias mean,
-/// rounding to the nearest integer, and clamping to `[-η, η]`.
+/// Estimates one bias value per coefficient from sampled masks.
+pub fn estimate_mask_bias_means(mask_samples: &[Vec<i64>], coefficient_count: usize) -> Vec<f64> {
+    let _ = (mask_samples, coefficient_count);
+    todo!("estimate the sampler bias")
+}
+
+/// Estimates toy `s₁` coefficients from aggregated signature observations.
 pub fn estimate_secret_from_biased_masks(
     sums_when_challenge_one: &[i64],
     counts_when_challenge_one: &[usize],
@@ -23,5 +19,5 @@ pub fn estimate_secret_from_biased_masks(
         bias_means,
         eta,
     );
-    todo!("estimate s₁ from conditional means with η = 4")
+    todo!("estimate the toy secret")
 }

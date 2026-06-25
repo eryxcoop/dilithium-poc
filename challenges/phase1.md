@@ -63,8 +63,9 @@ mean depends on the coefficient position.
 ### Setup
 
 Toy stats with the ML-DSA-65 `s₁` shape: `η = 4`, `l = 5`, `n = 256`, so the
-secret has 1280 coefficients. The demo uses 512 signatures and a known
-position-dependent bias:
+secret has 1280 coefficients. The demo first audits the broken sampler by
+generating many `y` vectors, then uses many signatures. The hidden distribution
+has a position-dependent mean:
 
 ```text
 even positions: E[yᵢ] = +2
@@ -79,8 +80,8 @@ Condition on positions where `cᵢ = 1`:
 E[zᵢ | cᵢ = 1] ≈ E[yᵢ] + s₁ᵢ
 ```
 
-Average the observed `zᵢ`, subtract the known bias mean, round, and clamp to
-`[-η, η]`.
+First estimate `E[yᵢ]` from sampled masks. Then average the observed `zᵢ`,
+subtract the inferred bias mean, round, and clamp to `[-η, η]`.
 
 ### Expected Result
 
