@@ -1,80 +1,253 @@
 # dilithium-poc
 
-POC en Rust para implementar y medir ML-DSA segun FIPS 204, con soporte de codificacion PKIX/X.509 segun RFC 9881.
+`dilithium-poc` is a Rust proof of concept for implementing, testing, and
+measuring ML-DSA according to [FIPS 204][fips-204], with optional PKIX/X.509
+transport helpers according to [RFC 9881][rfc-9881].
 
-Autor: Lorenzo Ruiz Díaz
+Author: Lorenzo Ruiz Diaz
 
-## Objetivo
+## Security Notice
 
-El objetivo de este repositorio es construir una implementacion auditable y medible de ML-DSA, no una libreria criptografica lista para produccion. La POC debe poder demostrar que coincide con el resultado estandar mediante tamanos exactos, vectores de prueba, rechazo de entradas malformadas, OIDs correctos y benchmarks reproducibles.
+This repository is not production cryptography. It is an auditable and
+measurable proof of concept, not a certified FIPS module and not a library that
+should be used to protect real data.
 
-FIPS 204 define el algoritmo ML-DSA. RFC 9881 define como transportar ML-DSA en certificados X.509 y estructuras PKIX.
+ML-DSA implementations need careful treatment of randomness, side channels,
+secret zeroization, fault behavior, parser strictness, and external audit. This
+repo is useful for learning, conformance work, experiments, benchmarks, and
+review, but it does not claim production readiness.
 
-## Estado
+## Scope
 
-Estado actual: M7 completo para conformidad FIPS 204 pure ML-DSA, wrappers
-PKIX/DER de RFC 9881. La suite `conformance/` valida vectores oficiales NIST
-CAVP/ACVP para KeyGen/Sign/Verify y snapshots/negativos PKIX para OIDs,
-`AlgorithmIdentifier`, `SubjectPublicKeyInfo`, `OneAsymmetricKey` y KeyUsage.
-Los benchmarks M7 viven bajo la feature `m7-benchmarks`.
+Implemented:
 
-Ya existe documentacion de trabajo:
+- ML-DSA-44, ML-DSA-65, and ML-DSA-87 parameter sets.
+- Pure ML-DSA `KeyGen`, `Sign`, and `Verify` workflows from FIPS 204.
+- Raw FIPS 204 public key, private key, and signature encodings.
+- Strict signature, key, hint, and sampling validation.
+- SHAKE/XOF-based sampling: `ExpandA(ρ)`, `ExpandS(ρ′)`, `ExpandMask(ρ″,κ)`,
+  `SampleInBall(c̃)`, `RejNTTPoly`, and `RejBoundedPoly`.
+- NTT-domain matrix support for `Â`.
+- Optional RFC 9881 PKIX helpers for OIDs, `AlgorithmIdentifier`,
+  `SubjectPublicKeyInfo`, `OneAsymmetricKey`, private-key CHOICEs, and
+  `keyUsage`.
+- NIST ACVP/CAVP conformance runners outside the ordinary `tests/` directory.
+- Criterion benchmarks for key generation, signing, verification, sampling,
+  NTT, encoding/decoding, PKIX, rejection behavior, and parameter experiments.
+- Educational failure-analysis notes and a `challenges/` area for intentionally
+  vulnerable classroom examples.
 
-- `roadmap.md`: milestones, estructura propuesta del crate, dependencias y plan de benchmarks.
-- `AGENTS.md`: notas normativas para futuros agentes o colaboradores.
-- `docs/NIST.FIPS.204.pdf`: copia local de FIPS 204.
-- `docs/rfc9881.txt`: copia local de RFC 9881.
-- `docs/CRYSTALS_Dilithium_Clean.md`: contexto tecnico no normativo sobre Dilithium/ML-DSA.
-- `scripts/extract-fips204-text.sh`: genera `tmp/fips204.txt` desde el PDF local usando `pdftotext`.
-- `conformance/`: vectores oficiales ACVP y runner de conformidad para
-  `keyGen`, `sigGen`, `sigVer` y reglas PKIX/RFC 9881.
-- `benches/m7-results.md`: reporte largo reproducible de benchmarks M7.
-- `benches/m7-criterion-results.csv`: datos Criterion M7 en nanosegundos.
+Out of scope:
 
-## Alcance
+- FIPS certification.
+- Production deployment.
+- HashML-DSA in PKIX/X.509. RFC 9881 targets pure ML-DSA for certificates,
+  CRLs, OCSP, certificate issuance, and related PKIX protocols.
+- Treating historical CRYSTALS-Dilithium vectors as byte-for-byte ML-DSA
+  conformance evidence unless they are explicitly adapted to FIPS 204.
 
-Incluido:
+## Current Status
 
-- ML-DSA-44, ML-DSA-65 y ML-DSA-87.
-- KeyGen, Sign y Verify conforme a FIPS 204.
-- Codificacion cruda de claves y firmas conforme a FIPS 204.
-- OIDs, `AlgorithmIdentifier`, `SubjectPublicKeyInfo` y private key formats conforme a RFC 9881.
-- Benchmarks de keygen, signing, verification, sampling, NTT y serializacion.
-- Experimentos controlados para evaluar hipotesis sobre parametros FIPS.
+The repo currently includes the M7 milestone work:
 
-Fuera del alcance principal:
+- FIPS 204 pure ML-DSA implementation for all three standard parameter sets.
+- RFC 9881 PKIX/DER wrappers behind the `pkix` feature.
+- Official NIST ACVP/CAVP coverage for `keyGen`, `sigGen`, and `sigVer`.
+- PKIX negative and positive tests for RFC 9881 OIDs, absent parameters, SPKI,
+  private-key CHOICEs, `OneAsymmetricKey`, and `keyUsage`.
+- Reproducible M7 benchmark reports under `benches/`.
+- Research notes and scaffolding for future "what can go wrong" challenges.
 
-- Certificacion FIPS.
-- Uso productivo sin auditoria criptografica externa.
-- HashML-DSA en PKIX/X.509. RFC 9881 no lo permite para certificados, CRLs, OCSP, emision de certificados y protocolos relacionados.
+## Quick Start
 
-## Uso
+Run the default unit tests:
 
-Comandos base del M0:
-
-```sh
+```bash
 cargo test
-cargo bench
-cargo test --all-features
-cargo bench --bench sign_verify --features m7-benchmarks
 ```
 
-La API pure ML-DSA vive en `dilithium_poc::ml_dsa`.
-La API PKIX/RFC 9881 vive detras de `--features pkix` en
-`dilithium_poc::pkix`.
+Run all features, including PKIX, instrumentation, and benchmark-only support:
 
-## Criterio de exito
+```bash
+cargo test --all-features
+```
 
-La POC se considera alineada con el estandar cuando:
+Run ACVP/FIPS 204 conformance checks:
 
-- Los tamanos de claves y firmas coinciden con FIPS 204.
-- KeyGen/Sign/Verify pasan vectores oficiales o equivalentes reproducibles.
-- Las firmas alteradas o mal codificadas fallan.
-- RFC 9881 usa los OIDs correctos y `AlgorithmIdentifier` sin parametros.
-- `SubjectPublicKeyInfo` contiene la public key cruda FIPS en BIT STRING.
-- Los private keys seed, expandedKey y both se codifican y validan correctamente.
-- Los benchmarks reportan resultados reproducibles para los tres parameter sets.
+```bash
+cargo test acvp --all-features
+```
 
-## Nota de seguridad
+Run RFC 9881-focused PKIX checks:
 
-Esta POC no debe usarse para proteger datos reales. ML-DSA requiere mucho cuidado con side channels, randomness, borrado de secretos, codificaciones estrictas y validacion de entradas no confiables.
+```bash
+cargo test --features pkix rfc9881_
+```
+
+Run linting with all targets and features:
+
+```bash
+cargo clippy --all-targets --all-features -- -D warnings
+```
+
+When working through Codex/RTK in this repository, prefix shell commands with
+`rtk`, for example `rtk cargo test --all-features`.
+
+## Basic API Example
+
+```rust
+use dilithium_poc::ml_dsa::{keygen, sign, verify};
+use dilithium_poc::params::ML_DSA_44;
+
+let key_pair = keygen(ML_DSA_44).unwrap();
+let message = b"hello ML-DSA";
+let context = b"example";
+
+let signature = sign(key_pair.private_key(), message, context).unwrap();
+let ok = verify(key_pair.public_key(), message, &signature, context).unwrap();
+
+assert!(ok);
+```
+
+The high-level pure ML-DSA API lives in `dilithium_poc::ml_dsa`.
+
+PKIX/RFC 9881 helpers are available with:
+
+```bash
+cargo test --features pkix
+```
+
+and live in `dilithium_poc::pkix`.
+
+## Cargo Features
+
+| Feature | Purpose |
+| --- | --- |
+| `std` | Default feature for ordinary host builds. |
+| `pkix` | Enables RFC 9881 DER/PKIX helpers using `der`, `spki`, and `pkcs8`. |
+| `instrumentation` | Exposes aggregate signing/sampling reports and deterministic test signing helpers. |
+| `experimental-params` | Enables non-standard parameter metadata for controlled experiments. |
+| `m7-benchmarks` | Enables benchmark-only paths; includes `experimental-params`, `instrumentation`, and `pkix`. |
+
+The `instrumentation` and `experimental-params` features are for measurement,
+tests, and experiments. They should not be exposed as production APIs.
+
+## Project Layout
+
+```text
+src/
+  ml_dsa/        High-level FIPS 204 KeyGen, Sign, Verify.
+  sampling/      XOF readers, rejection sampling, ExpandA/S/Mask, SampleInBall.
+  encoding/      Raw FIPS 204 key, signature, hint, bit, and polynomial encoders.
+  poly/          Polynomial, vector, matrix, and NTT-domain types.
+  params/        FIPS 204 constants and parameter-set metadata.
+  pkix/          RFC 9881 helpers behind the pkix feature.
+
+conformance/     NIST ACVP/CAVP and RFC 9881 conformance runners.
+benches/         Criterion benchmarks and benchmark reports.
+docs/            Local standards, research notes, and failure-analysis material.
+challenges/      Educational vulnerable examples and roadmap.
+scripts/         Utility scripts for standards text and ACVP fixtures.
+```
+
+## Conformance
+
+The conformance suite intentionally lives under `conformance/`, not `tests/`,
+so official vector data and PKIX snapshots remain separate from ordinary unit
+tests.
+
+Current coverage:
+
+| Suite | Scope |
+| --- | --- |
+| `ML-DSA-keyGen-FIPS204` | Key generation from official seeds for ML-DSA-44/65/87. |
+| `ML-DSA-sigGen-FIPS204` | Pure external deterministic and randomized signing. |
+| `ML-DSA-sigVer-FIPS204` | Pure external verification, including negative cases. |
+| RFC 9881 PKIX | OIDs, absent parameters, SPKI, private-key CHOICEs, `OneAsymmetricKey`, and `keyUsage`. |
+
+Run:
+
+```bash
+cargo test acvp --all-features
+cargo test --features pkix rfc9881_
+```
+
+See `conformance/README.md` for fixture provenance and executed coverage.
+
+## Benchmarks
+
+Benchmarks are Criterion-based and live under `benches/`.
+
+Useful commands:
+
+```bash
+cargo bench --bench sign_verify --features m7-benchmarks
+cargo bench --bench internals --features m7-benchmarks
+cargo bench --bench sampling --features m7-benchmarks
+cargo bench --bench rejection --features m7-benchmarks
+cargo bench --bench param_sweep --features m7-benchmarks
+```
+
+Recorded benchmark artifacts:
+
+- `benches/m7-results.md`: long-profile M7 benchmark report.
+- `benches/m7-criterion-results.csv`: Criterion timing data in nanoseconds.
+- `benches/signing-repetition-results.md`: signing-loop repetition report.
+- `benches/sampling-results.md`: sampling benchmark notes.
+
+## Educational Challenges
+
+The `challenges/` directory is reserved for intentionally vulnerable examples:
+nonce reuse, broken samplers, missing verifier checks, permissive parsers, and
+toy parameter failures.
+
+Challenge code must remain outside the conformant `src/` path. Each challenge
+should explain:
+
+- the bug,
+- the exploit intuition,
+- whether it uses toy params or real ML-DSA params,
+- what FIPS 204 or RFC 9881 rule prevents the bug,
+- how the strict implementation rejects or avoids the failure.
+
+Start with:
+
+- `challenges/README.md`
+- `challenges/roadmap.md`
+- `docs/ml-dsa-failure-examples-research.md`
+
+## Reference Documents
+
+- `docs/NIST.FIPS.204.pdf`: local copy of FIPS 204.
+- `docs/rfc9881.txt`: local copy of RFC 9881.
+- `docs/rfc9882.txt`: CMS-related reference; not the main PKIX target.
+- `docs/CRYSTALS_Dilithium_Clean.md`: useful historical context, not normative.
+- `docs/ml-dsa-failure-examples-research.md`: research notes for educational
+  failure challenges.
+- `roadmap.md`: milestone plan and implementation history.
+- `AGENTS.md`: contributor and agent guidance with normative ML-DSA/PKIX notes.
+
+Official references:
+
+- [FIPS 204: Module-Lattice-Based Digital Signature Standard][fips-204]
+- [RFC 9881: Use of ML-DSA in PKIX][rfc-9881]
+
+## Success Criteria
+
+This POC is considered aligned with its current goal when:
+
+- Key, signature, and encoded object sizes match FIPS 204 and RFC 9881.
+- KeyGen, Sign, and Verify pass official or reproducible conformance vectors.
+- Malformed or altered public keys, signatures, hints, contexts, and PKIX
+  wrappers are rejected.
+- `AlgorithmIdentifier.parameters` is absent, never DER `NULL`.
+- `SubjectPublicKeyInfo.subjectPublicKey` carries the raw FIPS public key in an
+  octet-aligned BIT STRING.
+- RFC 9881 seed, expanded-key, and `both` private-key forms are encoded and
+  validated correctly.
+- Benchmarks are reproducible for ML-DSA-44, ML-DSA-65, and ML-DSA-87.
+- Educational failure examples remain clearly isolated from the conformant
+  implementation.
+
+[fips-204]: https://doi.org/10.6028/NIST.FIPS.204
+[rfc-9881]: https://datatracker.ietf.org/doc/rfc9881/

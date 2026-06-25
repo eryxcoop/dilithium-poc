@@ -1,0 +1,98 @@
+# ML-DSA Failure Challenges
+
+This directory is the educational lab for "what can go wrong" examples around
+ML-DSA. It is intentionally outside `src/` so the conformant implementation
+remains clean, auditable, and aligned with FIPS 204 and RFC 9881.
+
+Every challenge in this directory must be treated as non-production,
+non-FIPS-conformant code. The point is to make a single security failure visible
+and teachable, not to offer alternate ML-DSA APIs.
+
+## Goals
+
+- Show how small-looking changes can break ML-DSA's security argument.
+- Keep each failure isolated: one bug, one exploit idea, one lesson.
+- Reuse safe crate components when helpful, but never modify the conformant
+  `src/` path to make a vulnerable example work.
+- Prefer tiny deterministic demos that can run in class without special setup.
+- Use Unicode notation in explanations: `ρ`, `ρ′`, `ρ″`, `μ`, `c̃`, `Â`, `∞`,
+  `η`, `τ`, `λ`, `γ₁`, `γ₂`, `β`, `ω`, `κ`.
+
+## Safety Boundary
+
+Challenge code may intentionally violate FIPS 204, but only inside this
+directory or behind a clearly named feature/test boundary. A valid challenge
+must never make the main `keygen`, `sign`, `verify`, sampling, encoding, PKIX,
+or ACVP paths more permissive.
+
+Use these labels consistently:
+
+- `FIPS path`: the real implementation under `src/`.
+- `vulnerable path`: the intentionally broken implementation in `challenges/`.
+- `toy params`: reduced parameters used only to make the exploit fast.
+- `real params`: one of ML-DSA-44, ML-DSA-65, or ML-DSA-87.
+
+## Challenge Shape
+
+Each challenge should eventually have the same structure:
+
+```text
+challenges/<challenge-name>/
+  README.md
+  src-or-runner files
+  fixtures or expected-output files, if needed
+```
+
+The per-challenge `README.md` should include:
+
+- Objective: what the student is trying to recover, forge, or distinguish.
+- Bug: the exact FIPS 204 or RFC 9881 rule being violated.
+- Setup: whether the demo uses toy params or real params.
+- Hint: the mathematical handle, for example `z - z′ = (c - c′)s1`.
+- Expected result: what success looks like.
+- FIPS defense: why the conformant implementation rejects or avoids it.
+
+## First Track
+
+The first implementation track should prioritize the strongest classroom demos:
+
+1. `nonce_reuse`: force the same `y` / `ρ″,κ` in two signatures and recover
+   `s1` or a signing-equivalent secret in a controlled setting.
+2. `sampler_patterned_y`: sample `y` with repeated coefficient structure and
+   show how signatures can still verify while leaking algebraic relations.
+3. `verifier_no_ctilde`: remove `c̃ == H(μ || w1Encode(w1′))` and demonstrate
+   a trivial forgery.
+4. `verifier_no_z_bound`: remove `||z||∞ < γ₁ - β` and accept responses outside
+   the short-vector domain.
+5. `verifier_no_omega`: accept dense or malformed hints and show why `h` is
+   adversarial input, not harmless metadata.
+6. `toy_params_too_small`: reduce `τ`, `λ`, `k`, `l`, or `n` until exhaustive
+   search or linear algebra becomes visible.
+
+## Extended Track
+
+After the first track, add examples that are subtler but closer to real
+implementation mistakes:
+
+- `lambda_too_short`: truncate `c̃` and find collisions or preimages in a toy
+  setting.
+- `tau_zero_forgery`: set `τ = 0` and forge because `SampleInBall(c̃)` always
+  gives `c = 0`.
+- `eta_too_small`: use `η = 0` or `η = 1` and recover secrets by enumeration in
+  toy params.
+- `expand_a_repeated_columns`: derive `Â` with missing row/column binding and
+  exploit repeated structure.
+- `gamma1_edge_leak`: use a too-small `γ₁` or wrong `β` and measure boundary
+  bias in `z = y + c s1`.
+- `trailing_bytes`: accept `sig || garbage` in a permissive parser and compare
+  against strict FIPS decoding.
+- `ctx_replay`: omit `ctx` from `M′` and replay a signature across domains.
+- `pkix_null_parameters`: accept DER `NULL` in `AlgorithmIdentifier.parameters`
+  and contrast it with RFC 9881's absent-parameters rule.
+
+## References
+
+- Research notes: `docs/ml-dsa-failure-examples-research.md`.
+- Normative ML-DSA reference: `docs/NIST.FIPS.204.pdf`.
+- Normative PKIX/X.509 reference: `docs/rfc9881.txt`.
+- Repo guidance: `AGENTS.md`.
