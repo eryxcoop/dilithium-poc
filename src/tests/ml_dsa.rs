@@ -89,6 +89,63 @@ fn altered_message_signature_or_public_key_fails_verification() {
 }
 
 #[test]
+fn context_is_part_of_the_signed_domain() {
+    let key_pair = keygen_from_seed(ML_DSA_44, TEST_SEED).unwrap();
+    let message = b"context binding regression";
+    let signature =
+        sign_deterministic_for_test(key_pair.private_key(), message, b"domain-a").unwrap();
+
+    assert!(verify(key_pair.public_key(), message, &signature, b"domain-a").unwrap());
+    assert!(!verify(key_pair.public_key(), message, &signature, b"domain-b").unwrap());
+}
+
+#[test]
+fn verifier_rejects_parameter_set_mismatch() {
+    let public_key_pair = keygen_from_seed(ML_DSA_44, TEST_SEED).unwrap();
+    let signature_key_pair = keygen_from_seed(ML_DSA_65, [0x42; 32]).unwrap();
+    let signature =
+        sign_deterministic_for_test(signature_key_pair.private_key(), b"parameter set", b"")
+            .unwrap();
+
+    assert!(!verify(
+        public_key_pair.public_key(),
+        b"parameter set",
+        &signature,
+        b""
+    )
+    .unwrap());
+}
+
+#[test]
+fn verifier_rejects_structurally_valid_signature_when_z_exceeds_infinity_norm_bound() {
+    let key_pair = keygen_from_seed(ML_DSA_44, TEST_SEED).unwrap();
+    let message = b"z infinity norm regression";
+    let signature = sign_deterministic_for_test(key_pair.private_key(), message, b"").unwrap();
+    let parts = sig_decode(signature.as_bytes(), ML_DSA_44).unwrap();
+    let bound = (ML_DSA_44.core.gamma1 - ML_DSA_44.core.beta) as i32;
+
+    let mut z_polys = vec![Poly::zero(); ML_DSA_44.core.l];
+    z_polys[0] = poly_with_coefficients(&[(0, bound)]);
+    let out_of_bounds_z = PolyVector::from_polys(ML_DSA_44.core.l, z_polys).unwrap();
+    let encoded = sig_encode(
+        &parts.c_tilde,
+        &out_of_bounds_z,
+        &parts.hints,
+        ML_DSA_44,
+    )
+    .unwrap();
+    let out_of_bounds_signature = Signature::from_raw(ML_DSA_44, encoded).unwrap();
+
+    assert!(!verify(
+        key_pair.public_key(),
+        message,
+        &out_of_bounds_signature,
+        b""
+    )
+    .unwrap());
+}
+
+#[test]
 fn context_longer_than_255_bytes_is_rejected() {
     let key_pair = keygen_from_seed(ML_DSA_44, TEST_SEED).unwrap();
     let too_long = vec![0u8; 256];
