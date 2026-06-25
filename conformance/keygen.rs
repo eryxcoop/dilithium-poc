@@ -1,6 +1,6 @@
 //! ACVP keyGen vector checks.
 
-use crate::ml_dsa::keygen_from_seed;
+use crate::ml_dsa::KeyPair;
 
 use super::fixtures::{KEYGEN_EXPECTED, KEYGEN_PROMPT};
 use super::models::{AcvpFile, KeyGenExpectedGroup, KeyGenPromptGroup};
@@ -27,7 +27,8 @@ fn acvp_keygen_vectors_match_official_expected_results() {
                 .get(&test.tc_id)
                 .expect("expected keyGen case is present");
             let seed = fixed_bytes::<32>(&test.seed);
-            let key_pair = keygen_from_seed(parameter_set, seed).expect("keyGen vector runs");
+            let key_pair =
+                KeyPair::generate_from_seed(parameter_set, seed).expect("keyGen vector runs");
 
             assert_eq!(
                 key_pair.public_key().as_bytes(),

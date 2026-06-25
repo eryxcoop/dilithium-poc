@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::time::Instant;
 
-use dilithium_poc::ml_dsa::{keygen_from_seed, sign_with_report};
+use dilithium_poc::ml_dsa::{KeyPair, sign_with_report};
 use dilithium_poc::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87, ParameterSet};
 
 const SAMPLES_PER_SET: usize = 1_024;
@@ -37,8 +37,9 @@ fn main() {
 }
 
 fn measure(parameter_set: ParameterSet) -> RepetitionStats {
-    let key_pair = keygen_from_seed(parameter_set, seed_for(parameter_set.security_category, 0))
-        .expect("fixed keygen seed should produce a key pair");
+    let key_pair =
+        KeyPair::generate_from_seed(parameter_set, seed_for(parameter_set.security_category, 0))
+            .expect("fixed keygen seed should produce a key pair");
     let mut stats = RepetitionStats::default();
 
     for sample in 0..SAMPLES_PER_SET {

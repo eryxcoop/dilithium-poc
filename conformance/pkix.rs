@@ -1,5 +1,5 @@
 use crate::error::DilithiumError;
-use crate::ml_dsa::{PrivateKey, PublicKey, keygen_from_seed};
+use crate::ml_dsa::{KeyPair, PrivateKey, PublicKey};
 use crate::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87};
 use crate::pkix::{
     ConsistencyCheck, ID_ML_DSA_44, ID_ML_DSA_65, ID_ML_DSA_87, KeyUsage, PkixPrivateKey,
@@ -64,7 +64,7 @@ fn rfc9881_rejects_algorithm_identifier_parameters() {
 
 #[test]
 fn rfc9881_rejects_parameters_inside_pkix_wrappers() {
-    let keypair = keygen_from_seed(ML_DSA_44, [11u8; 32]).unwrap();
+    let keypair = KeyPair::generate_from_seed(ML_DSA_44, [11u8; 32]).unwrap();
     let algorithm_with_null = AlgorithmIdentifierRef {
         oid: ID_ML_DSA_44,
         parameters: Some(AnyRef::NULL),
@@ -93,7 +93,7 @@ fn rfc9881_rejects_parameters_inside_pkix_wrappers() {
 
 #[test]
 fn rfc9881_subject_public_key_info_roundtrips_raw_public_key() {
-    let keypair = keygen_from_seed(ML_DSA_44, [7u8; 32]).unwrap();
+    let keypair = KeyPair::generate_from_seed(ML_DSA_44, [7u8; 32]).unwrap();
     let der = subject_public_key_info_der(keypair.public_key()).unwrap();
     let decoded = decode_subject_public_key_info(&der).unwrap();
 
@@ -103,7 +103,7 @@ fn rfc9881_subject_public_key_info_roundtrips_raw_public_key() {
 
 #[test]
 fn rfc9881_private_key_choices_roundtrip_by_explicit_tag() {
-    let keypair = keygen_from_seed(ML_DSA_44, [9u8; 32]).unwrap();
+    let keypair = KeyPair::generate_from_seed(ML_DSA_44, [9u8; 32]).unwrap();
     let seed = [9u8; 32];
     let choices = [
         PkixPrivateKey::Seed(seed),
@@ -127,7 +127,7 @@ fn rfc9881_private_key_choices_roundtrip_by_explicit_tag() {
 
 #[test]
 fn rfc9881_one_asymmetric_key_roundtrips_seed_expanded_and_both() {
-    let keypair = keygen_from_seed(ML_DSA_65, [3u8; 32]).unwrap();
+    let keypair = KeyPair::generate_from_seed(ML_DSA_65, [3u8; 32]).unwrap();
     let seed = [3u8; 32];
     let choices = [
         PkixPrivateKey::Seed(seed),
@@ -150,7 +150,7 @@ fn rfc9881_one_asymmetric_key_roundtrips_seed_expanded_and_both() {
 
 #[test]
 fn rfc9881_rejects_inconsistent_both_private_key_by_default() {
-    let keypair = keygen_from_seed(ML_DSA_44, [4u8; 32]).unwrap();
+    let keypair = KeyPair::generate_from_seed(ML_DSA_44, [4u8; 32]).unwrap();
     let inconsistent = PkixPrivateKey::Both {
         seed: [5u8; 32],
         expanded_key: keypair.private_key().clone(),

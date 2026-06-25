@@ -1,6 +1,6 @@
 use super::*;
 use crate::ml_dsa::{
-    KeyPair, PrivateKey, keygen, keygen_from_seed, sign, sign_deterministic_for_test,
+    KeyPair, PrivateKey, sign, sign_deterministic_for_test,
     sign_deterministic_for_test_with_report, verify,
 };
 
@@ -11,7 +11,7 @@ const TEST_SEED: [u8; 32] = [
 
 #[test]
 fn keygen_from_seed_produces_exact_fips_sizes() {
-    let key_pair = keygen_from_seed(ML_DSA_44, TEST_SEED).unwrap();
+    let key_pair = KeyPair::generate_from_seed(ML_DSA_44, TEST_SEED).unwrap();
 
     assert_eq!(
         key_pair.public_key().as_bytes().len(),
@@ -38,7 +38,7 @@ fn key_pair_rejects_mismatched_parameter_sets() {
 
 #[test]
 fn deterministic_signature_verifies_and_reports_attempts() {
-    let key_pair = keygen_from_seed(ML_DSA_44, TEST_SEED).unwrap();
+    let key_pair = KeyPair::generate_from_seed(ML_DSA_44, TEST_SEED).unwrap();
     let message = b"m4 deterministic signing";
     let context = b"poc";
 
@@ -52,7 +52,7 @@ fn deterministic_signature_verifies_and_reports_attempts() {
 #[test]
 fn deterministic_signing_reports_attempts_for_all_parameter_sets() {
     for parameter_set in [ML_DSA_44, ML_DSA_65, ML_DSA_87] {
-        let key_pair = keygen_from_seed(parameter_set, TEST_SEED).unwrap();
+        let key_pair = KeyPair::generate_from_seed(parameter_set, TEST_SEED).unwrap();
         let message = format!("attempt instrumentation for {}", parameter_set.name);
         let signed = sign_deterministic_for_test_with_report(
             key_pair.private_key(),
@@ -76,7 +76,7 @@ fn deterministic_signing_reports_attempts_for_all_parameter_sets() {
 
 #[test]
 fn hedged_signature_verifies() {
-    let key_pair = keygen(ML_DSA_44).unwrap();
+    let key_pair = KeyPair::generate(ML_DSA_44).unwrap();
     let signature = sign(key_pair.private_key(), b"m4 hedged signing", b"").unwrap();
 
     assert!(verify(key_pair.public_key(), b"m4 hedged signing", &signature, b"").unwrap());
@@ -84,7 +84,7 @@ fn hedged_signature_verifies() {
 
 #[test]
 fn altered_message_signature_or_public_key_fails_verification() {
-    let key_pair = keygen_from_seed(ML_DSA_44, TEST_SEED).unwrap();
+    let key_pair = KeyPair::generate_from_seed(ML_DSA_44, TEST_SEED).unwrap();
     let message = b"message";
     let signature = sign_deterministic_for_test(key_pair.private_key(), message, b"ctx").unwrap();
 
@@ -103,7 +103,7 @@ fn altered_message_signature_or_public_key_fails_verification() {
 
 #[test]
 fn context_is_part_of_the_signed_domain() {
-    let key_pair = keygen_from_seed(ML_DSA_44, TEST_SEED).unwrap();
+    let key_pair = KeyPair::generate_from_seed(ML_DSA_44, TEST_SEED).unwrap();
     let message = b"context binding regression";
     let signature =
         sign_deterministic_for_test(key_pair.private_key(), message, b"domain-a").unwrap();
@@ -114,8 +114,8 @@ fn context_is_part_of_the_signed_domain() {
 
 #[test]
 fn verifier_rejects_parameter_set_mismatch() {
-    let public_key_pair = keygen_from_seed(ML_DSA_44, TEST_SEED).unwrap();
-    let signature_key_pair = keygen_from_seed(ML_DSA_65, [0x42; 32]).unwrap();
+    let public_key_pair = KeyPair::generate_from_seed(ML_DSA_44, TEST_SEED).unwrap();
+    let signature_key_pair = KeyPair::generate_from_seed(ML_DSA_65, [0x42; 32]).unwrap();
     let signature =
         sign_deterministic_for_test(signature_key_pair.private_key(), b"parameter set", b"")
             .unwrap();
@@ -133,7 +133,7 @@ fn verifier_rejects_parameter_set_mismatch() {
 
 #[test]
 fn verifier_rejects_structurally_valid_signature_when_z_exceeds_infinity_norm_bound() {
-    let key_pair = keygen_from_seed(ML_DSA_44, TEST_SEED).unwrap();
+    let key_pair = KeyPair::generate_from_seed(ML_DSA_44, TEST_SEED).unwrap();
     let message = b"z infinity norm regression";
     let signature = sign_deterministic_for_test(key_pair.private_key(), message, b"").unwrap();
     let parts = sig_decode(signature.as_bytes(), ML_DSA_44).unwrap();
@@ -158,7 +158,7 @@ fn verifier_rejects_structurally_valid_signature_when_z_exceeds_infinity_norm_bo
 
 #[test]
 fn context_longer_than_255_bytes_is_rejected() {
-    let key_pair = keygen_from_seed(ML_DSA_44, TEST_SEED).unwrap();
+    let key_pair = KeyPair::generate_from_seed(ML_DSA_44, TEST_SEED).unwrap();
     let too_long = vec![0u8; 256];
 
     assert_eq!(

@@ -7,7 +7,7 @@ use dilithium_poc::coefficient::Coefficient;
 use dilithium_poc::encoding::{
     pk_decode, pk_encode, sig_decode, sig_encode, sk_decode, sk_encode, w1_encode,
 };
-use dilithium_poc::ml_dsa::{keygen_from_seed, sign_deterministic_for_test};
+use dilithium_poc::ml_dsa::{KeyPair, sign_deterministic_for_test};
 use dilithium_poc::params::{PARAMETER_SETS, ParameterSet};
 use dilithium_poc::pkix::{
     PkixPrivateKey, decode_subject_public_key_info, encode_one_asymmetric_key,
@@ -105,7 +105,8 @@ fn bench_encoding(c: &mut Criterion) {
     let mut group = c.benchmark_group("m7_encoding_raw");
 
     for parameter_set in PARAMETER_SETS {
-        let key_pair = keygen_from_seed(parameter_set, seed32(parameter_set, 5)).unwrap();
+        let key_pair =
+            KeyPair::generate_from_seed(parameter_set, seed32(parameter_set, 5)).unwrap();
         let message = format!("M7 encoding benchmark {}", parameter_set.name);
         let signature =
             sign_deterministic_for_test(key_pair.private_key(), message.as_bytes(), b"m7").unwrap();
@@ -179,7 +180,7 @@ fn bench_pkix_der(c: &mut Criterion) {
 
     for parameter_set in PARAMETER_SETS {
         let seed = seed32(parameter_set, 6);
-        let key_pair = keygen_from_seed(parameter_set, seed).unwrap();
+        let key_pair = KeyPair::generate_from_seed(parameter_set, seed).unwrap();
         let private_choice = PkixPrivateKey::Both {
             seed,
             expanded_key: key_pair.private_key().clone(),

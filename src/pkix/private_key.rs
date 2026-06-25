@@ -8,7 +8,7 @@ use der::{
 use pkcs8::{PrivateKeyInfo, PrivateKeyInfoRef};
 
 use crate::error::{DilithiumError, DilithiumResult};
-use crate::ml_dsa::{PrivateKey, PublicKey, keygen_from_seed};
+use crate::ml_dsa::{KeyPair, PrivateKey, PublicKey};
 use crate::params::ParameterSet;
 
 use super::algorithm::{algorithm_identifier, validate_absent_parameters};
@@ -274,7 +274,7 @@ fn ensure_seed_matches_expanded_key(
     seed: [u8; PRIVATE_KEY_SEED_BYTES],
     expanded_key: &PrivateKey,
 ) -> DilithiumResult<()> {
-    let generated = keygen_from_seed(parameter_set, seed)?;
+    let generated = KeyPair::generate_from_seed(parameter_set, seed)?;
     if generated.private_key().as_bytes() == expanded_key.as_bytes() {
         Ok(())
     } else {
@@ -296,7 +296,7 @@ fn ensure_public_key_consistency(
         PkixPrivateKey::Seed(seed) | PkixPrivateKey::Both { seed, .. } => *seed,
         PkixPrivateKey::Expanded(_) => return Ok(()),
     };
-    let generated = keygen_from_seed(parameter_set, seed)?;
+    let generated = KeyPair::generate_from_seed(parameter_set, seed)?;
     if generated.public_key().as_bytes() == public_key.as_bytes() {
         Ok(())
     } else {

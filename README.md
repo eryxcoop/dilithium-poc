@@ -96,10 +96,10 @@ When working through Codex/RTK in this repository, prefix shell commands with
 ## Basic API Example
 
 ```rust
-use dilithium_poc::ml_dsa::{keygen, sign, verify};
+use dilithium_poc::ml_dsa::{KeyPair, sign, verify};
 use dilithium_poc::params::ML_DSA_44;
 
-let key_pair = keygen(ML_DSA_44).unwrap();
+let key_pair = KeyPair::generate(ML_DSA_44).unwrap();
 let message = b"hello ML-DSA";
 let context = b"example";
 

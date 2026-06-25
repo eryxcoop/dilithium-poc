@@ -4,7 +4,7 @@ use std::time::Duration;
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 
 use dilithium_poc::ml_dsa::{
-    keygen_from_seed, sign_deterministic_for_test, sign_deterministic_for_test_with_report, verify,
+    KeyPair, sign_deterministic_for_test, sign_deterministic_for_test_with_report, verify,
 };
 use dilithium_poc::params::{PARAMETER_SETS, ParameterSet};
 
@@ -24,7 +24,7 @@ fn bench_keygen(c: &mut Criterion) {
             &parameter_set,
             |b, &ps| {
                 b.iter(|| {
-                    keygen_from_seed(ps, seed_for(ps, 1)).unwrap();
+                    KeyPair::generate_from_seed(ps, seed_for(ps, 1)).unwrap();
                 });
             },
         );
@@ -37,7 +37,8 @@ fn bench_sign(c: &mut Criterion) {
     let mut group = c.benchmark_group("m7_sign_deterministic");
 
     for parameter_set in PARAMETER_SETS {
-        let key_pair = keygen_from_seed(parameter_set, seed_for(parameter_set, 2)).unwrap();
+        let key_pair =
+            KeyPair::generate_from_seed(parameter_set, seed_for(parameter_set, 2)).unwrap();
         let message = message_for(parameter_set);
         group.bench_with_input(
             BenchmarkId::from_parameter(parameter_set.name),
@@ -62,7 +63,8 @@ fn bench_sign_with_report(c: &mut Criterion) {
     let mut group = c.benchmark_group("m7_sign_deterministic_with_report");
 
     for parameter_set in PARAMETER_SETS {
-        let key_pair = keygen_from_seed(parameter_set, seed_for(parameter_set, 3)).unwrap();
+        let key_pair =
+            KeyPair::generate_from_seed(parameter_set, seed_for(parameter_set, 3)).unwrap();
         let message = message_for(parameter_set);
         group.bench_with_input(
             BenchmarkId::from_parameter(parameter_set.name),
@@ -87,7 +89,8 @@ fn bench_verify(c: &mut Criterion) {
     let mut group = c.benchmark_group("m7_verify");
 
     for parameter_set in PARAMETER_SETS {
-        let key_pair = keygen_from_seed(parameter_set, seed_for(parameter_set, 4)).unwrap();
+        let key_pair =
+            KeyPair::generate_from_seed(parameter_set, seed_for(parameter_set, 4)).unwrap();
         let message = message_for(parameter_set);
         let signature =
             sign_deterministic_for_test(key_pair.private_key(), &message, b"m7").unwrap();

@@ -6,7 +6,7 @@ use crate::params::ParameterSet;
 use crate::sampling::{ExpandASeed, expand_a, sample_in_ball};
 
 use super::context::format_message;
-use super::sign::{commitment_hash, message_representative};
+use super::sign::{ChallengeSeed, MessageRepresentative};
 use super::types::{PublicKey, Signature};
 
 /// Verifies an ML-DSA signature for a byte-aligned message and context.
@@ -47,7 +47,7 @@ pub fn verify(
         Err(_) => return Ok(false),
     };
     let tr = public_key.hash();
-    let mu = message_representative(&tr, &formatted_message);
+    let mu = MessageRepresentative::derive(&tr, &formatted_message);
     let c = match sample_in_ball(&signature_parts.c_tilde, parameter_set) {
         Ok(c) => c,
         Err(_) => return Ok(false),
@@ -76,7 +76,7 @@ pub fn verify(
         Ok(value) => value,
         Err(_) => return Ok(false),
     };
-    let c_tilde_prime = match commitment_hash(&mu, &w1_prime, parameter_set) {
+    let c_tilde_prime = match ChallengeSeed::derive(&mu, &w1_prime, parameter_set) {
         Ok(value) => value,
         Err(_) => return Ok(false),
     };
@@ -84,7 +84,7 @@ pub fn verify(
     Ok(!signature_parts
         .z
         .infinity_norm_at_least(parameter_set.core.gamma1 - parameter_set.core.beta)
-        && c_tilde_prime == signature_parts.c_tilde)
+        && c_tilde_prime.as_bytes() == signature_parts.c_tilde.as_slice())
 }
 
 /// Returns `false` unless `public_key` and `signature` have exact FIPS 204 sizes.

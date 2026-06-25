@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::time::Instant;
 
-use dilithium_poc::ml_dsa::{keygen_from_seed, sign_deterministic_for_test_with_report};
+use dilithium_poc::ml_dsa::{KeyPair, sign_deterministic_for_test_with_report};
 use dilithium_poc::params::{PARAMETER_SETS, ParameterSet};
 
 const SAMPLES_PER_SET: usize = 128;
@@ -34,7 +34,7 @@ fn main() {
 }
 
 fn measure(parameter_set: ParameterSet) -> RejectionStats {
-    let key_pair = keygen_from_seed(parameter_set, seed_for(parameter_set, 1)).unwrap();
+    let key_pair = KeyPair::generate_from_seed(parameter_set, seed_for(parameter_set, 1)).unwrap();
     let mut stats = RejectionStats::default();
 
     for sample in 0..SAMPLES_PER_SET {
