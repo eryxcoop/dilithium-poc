@@ -15,23 +15,29 @@ algebraic demos.
 
 ## Phase 0: Harness and Guardrails
 
-Status: `planned`
+Status: `scaffolded`
 
 Build the shared structure that keeps vulnerable material from leaking into the
 conformant crate.
 
-- Create a small challenge runner convention, for example `cargo run --example`
-  wrappers or a separate `challenges` crate.
-- Decide how toy parameters are represented without weakening `src/params`.
+- Use `challenges/` as a separate Cargo workspace member.
+- Keep toy parameters in separate educational algebra types under
+  `challenges/src/toy/`.
+- Use transcript-first runners under `challenges/src/shared/`, with examples for
+  class output and tests for deterministic assertions.
+- Gate intentionally vulnerable runners behind `failure-challenges`.
 - Add a template README for each challenge.
 - Add CI-safe tests that assert vulnerable examples stay outside the FIPS path.
 - Document every intentional violation with the exact FIPS 204 or RFC 9881 rule.
 
 Exit criteria:
 
-- A new challenge can be added without touching production signing or verifying.
-- Running normal ACVP/conformance tests does not depend on challenge code.
-- Vulnerable demos have names that cannot be confused with real ML-DSA APIs.
+- Done: a new challenge can be added without touching production signing or
+  verifying.
+- Done: running normal ACVP/conformance tests does not depend on challenge code.
+- Done: vulnerable demos require an explicit `failure-challenges` feature.
+- Pending: add a per-challenge README template.
+- Pending: add the first real vulnerable demo.
 
 ## Phase 1: Core Classroom Failures
 
@@ -40,14 +46,14 @@ Status: `planned`
 These are the first exercises to implement because they are direct, memorable,
 and map cleanly to the strongest security failures.
 
-| Challenge              | Bug                               | Demo target                             | Impact                                       |
-| ---------------------- | --------------------------------- | --------------------------------------- | -------------------------------------------- | -------------------------------- | --------------- | ---------- | --------------------------------------- |
-| `nonce_reuse`          | Reuse the same `y` / `ρ″,κ`       | Real or near-real controlled signatures | Recover `s1` or a signing-equivalent secret  |
-| `sampler_patterned_y`  | Patterned mask sampler            | Toy or reduced setting                  | Leak equations while signatures still verify |
-| `verifier_no_ctilde`   | Skip `c̃ == H(μ                    |                                         | w1Encode(w1′))`                              | Toy or real structural signature | Trivial forgery |
-| `verifier_no_z_bound`  | Skip `                            |                                         | z                                            |                                  | ∞ < γ₁ - β`     | Toy params | Forgery outside the short-vector domain |
-| `verifier_no_omega`    | Accept dense/malformed `h`        | Toy params plus strict comparison       | Hint-assisted forgery or malleability        |
-| `toy_params_too_small` | Shrink `τ`, `λ`, `k`, `l`, or `n` | Toy params                              | Exhaustive search or linear algebra attack   |
+| Challenge              | Bug                                 | Demo target                             | Impact                                       |
+| ---------------------- | ----------------------------------- | --------------------------------------- | -------------------------------------------- |
+| `nonce_reuse`          | Reuse the same `y` / `ρ″,κ`         | Real or near-real controlled signatures | Recover `s1` or a signing-equivalent secret  |
+| `sampler_patterned_y`  | Patterned mask sampler              | Toy or reduced setting                  | Leak equations while signatures still verify |
+| `verifier_no_ctilde`   | Skip `c̃ == H(μ \|\| w1Encode(w1′))` | Toy or real structural signature        | Trivial forgery                              |
+| `verifier_no_z_bound`  | Skip `\|\|z\|\|∞ < γ₁ - β`          | Toy params                              | Forgery outside the short-vector domain      |
+| `verifier_no_omega`    | Accept dense/malformed `h`          | Toy params plus strict comparison       | Hint-assisted forgery or malleability        |
+| `toy_params_too_small` | Shrink `τ`, `λ`, `k`, `l`, or `n`   | Toy params                              | Exhaustive search or linear algebra attack   |
 
 Exit criteria:
 
@@ -88,8 +94,8 @@ Status: `planned`
 These are less algebraic but very realistic implementation pitfalls.
 
 | Challenge                       | Broken rule                    | Demo idea                                                   |
-| ------------------------------- | ------------------------------ | ----------------------------------------------------------- | --- | ----------------------------- |
-| `trailing_bytes`                | Accept exact-size violations   | Accept `sig                                                 |     | garbage` in vulnerable parser |
+| ------------------------------- | ------------------------------ | ----------------------------------------------------------- |
+| `trailing_bytes`                | Accept exact-size violations   | Accept `sig \|\| garbage` in vulnerable parser              |
 | `ctx_replay`                    | Omit `ctx` from `M′`           | Replay one signature across `"login"` and `"firmware"`      |
 | `hint_malleability`             | Accept non-canonical hints     | Accept duplicate, unsorted, or over-`ω` hints               |
 | `pkix_null_parameters`          | Accept DER `NULL` parameters   | Contrast vulnerable PKIX parser with RFC 9881 strict parser |
@@ -111,12 +117,12 @@ These are better for a second class or workshop because they need more math,
 more samples, or more explanation.
 
 | Challenge                       | Focus          | Demo idea                                                       |
-| ------------------------------- | -------------- | --------------------------------------------------------------- | --- | ---- | --- | ------- |
+| ------------------------------- | -------------- | --------------------------------------------------------------- |
 | `expand_a_repeated_columns`     | `ρ`, `Â`       | Drop row/column index binding and exploit repeated columns      |
 | `rho_prime_reuse`               | `ρ′`           | Reuse secret expansion across keys and compare public equations |
 | `wrong_zeta_rank_loss`          | `ζ`            | Use a degenerate NTT root in toy params and observe collisions  |
 | `small_or_composite_q`          | `q`            | Make ring arithmetic enumerable or non-field-like               |
-| `d_too_large_no_ct0_check`      | `d`, `γ₂`      | Over-compress `t1` and skip `                                   |     | c t0 |     | ∞ < γ₂` |
+| `d_too_large_no_ct0_check`      | `d`, `γ₂`      | Over-compress `t1` and skip `\|\|c t0\|\|∞ < γ₂`                |
 | `biased_rejection_distribution` | `γ₁`, `β`, `η` | Use accepted/rejected edge statistics to leak secret signs      |
 
 Exit criteria:
@@ -157,13 +163,20 @@ cargo clippy --all-targets --all-features -- -D warnings
 - If a challenge uses benchmarks or many samples, record the profile and results
   under `challenges/<challenge-name>/results.md`.
 
+## Resolved Design Decisions
+
+- `challenges/` is a separate Cargo workspace member named
+  `dilithium-poc-challenges`.
+- Toy algebra is separate from production `Poly`/`PolyVector` and lives under
+  `challenges/src/toy/`.
+- Runners should produce classroom-friendly transcripts and deterministic tests.
+  The shared transcript format lives under `challenges/src/shared/`.
+- Intentionally vulnerable runners require the explicit feature
+  `failure-challenges`.
+
 ## Open Design Decisions
 
-- Whether `challenges/` should be a separate Cargo workspace member, examples
-  only, or a collection of Markdown-first walkthroughs plus test modules.
-- Whether toy algebra should reuse existing `Poly`/`PolyVector` types or define
-  smaller educational types to avoid pretending toy params are FIPS-compatible.
-- Whether exploit runners should print classroom-friendly transcripts or simply
-  assert recovery/forgery in tests.
-- Whether to add a feature such as `failure-challenges` so challenge code cannot
-  compile accidentally in ordinary builds.
+- Whether future toy algebra needs matrices and linear solvers in this crate, or
+  whether individual challenges should implement only the algebra they need.
+- Whether challenge runners should eventually share one CLI dispatcher or remain
+  as separate `cargo run --example ...` entry points.

@@ -32,6 +32,21 @@ Use these labels consistently:
 - `toy params`: reduced parameters used only to make the exploit fast.
 - `real params`: one of ML-DSA-44, ML-DSA-65, or ML-DSA-87.
 
+## Design Decisions
+
+The challenge lab uses four guardrails:
+
+- `challenges/` is a separate Cargo workspace member. It depends on the main
+  crate by path, but the main crate does not depend on it.
+- Toy algebra uses separate educational types under `challenges/src/toy/`.
+  Reduced `n`, altered `q`, and other toy parameters must not be represented as
+  FIPS-compatible `Poly`, `PolyVector`, or `ParameterSet` values.
+- Runners should emit a classroom transcript and have deterministic tests. The
+  shared format lives under `challenges/src/shared/`.
+- Intentionally vulnerable runners must be gated by the `failure-challenges`
+  feature. Normal workspace builds compile the harmless harness, not the future
+  vulnerable demos.
+
 ## Challenge Shape
 
 Each challenge should eventually have the same structure:
@@ -51,6 +66,21 @@ The per-challenge `README.md` should include:
 - Hint: the mathematical handle, for example `z - z′ = (c - c′)s1`.
 - Expected result: what success looks like.
 - FIPS defense: why the conformant implementation rejects or avoids it.
+
+## Commands
+
+Compile and test the harmless challenge harness:
+
+```bash
+cargo test -p dilithium-poc-challenges
+```
+
+Compile the intentionally vulnerable runner surface explicitly:
+
+```bash
+cargo test -p dilithium-poc-challenges --features failure-challenges
+cargo run -p dilithium-poc-challenges --example transcript_smoke --features failure-challenges
+```
 
 ## First Track
 

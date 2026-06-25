@@ -146,7 +146,7 @@ src/
 conformance/     NIST ACVP/CAVP and RFC 9881 conformance runners.
 benches/         Criterion benchmarks and benchmark reports.
 docs/            Local standards, research notes, and failure-analysis material.
-challenges/      Educational vulnerable examples and roadmap.
+challenges/      Separate workspace crate for educational vulnerable examples.
 scripts/         Utility scripts for standards text and ACVP fixtures.
 ```
 
@@ -200,6 +200,17 @@ Recorded benchmark artifacts:
 The `challenges/` directory is reserved for intentionally vulnerable examples:
 nonce reuse, broken samplers, missing verifier checks, permissive parsers, and
 toy parameter failures.
+
+Challenge code lives in a separate workspace member named
+`dilithium-poc-challenges`. Harmless scaffolding, including toy algebra and the
+shared transcript format, compiles normally. Concrete vulnerable runners must be
+enabled explicitly with the `failure-challenges` feature:
+
+```bash
+cargo test -p dilithium-poc-challenges
+cargo test -p dilithium-poc-challenges --features failure-challenges
+cargo run -p dilithium-poc-challenges --example transcript_smoke --features failure-challenges
+```
 
 Challenge code must remain outside the conformant `src/` path. Each challenge
 should explain:

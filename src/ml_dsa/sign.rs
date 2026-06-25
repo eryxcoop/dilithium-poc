@@ -26,15 +26,13 @@ pub fn sign(
     message: &[u8],
     context: &[u8],
 ) -> DilithiumResult<Signature> {
-    Ok(
-        sign_with_report_internal(
-            private_key,
-            message,
-            context,
-            random_bytes::<SIGNING_RANDOMNESS_BYTES>()?,
-        )?
-        .into_signature(),
-    )
+    Ok(sign_with_report_internal(
+        private_key,
+        message,
+        context,
+        random_bytes::<SIGNING_RANDOMNESS_BYTES>()?,
+    )?
+    .into_signature())
 }
 
 /// Generates an ML-DSA signature using caller-supplied `rnd` for KAT/ACVP tests.

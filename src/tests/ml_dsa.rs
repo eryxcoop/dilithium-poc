@@ -107,13 +107,15 @@ fn verifier_rejects_parameter_set_mismatch() {
         sign_deterministic_for_test(signature_key_pair.private_key(), b"parameter set", b"")
             .unwrap();
 
-    assert!(!verify(
-        public_key_pair.public_key(),
-        b"parameter set",
-        &signature,
-        b""
-    )
-    .unwrap());
+    assert!(
+        !verify(
+            public_key_pair.public_key(),
+            b"parameter set",
+            &signature,
+            b""
+        )
+        .unwrap()
+    );
 }
 
 #[test]
@@ -127,22 +129,18 @@ fn verifier_rejects_structurally_valid_signature_when_z_exceeds_infinity_norm_bo
     let mut z_polys = vec![Poly::zero(); ML_DSA_44.core.l];
     z_polys[0] = poly_with_coefficients(&[(0, bound)]);
     let out_of_bounds_z = PolyVector::from_polys(ML_DSA_44.core.l, z_polys).unwrap();
-    let encoded = sig_encode(
-        &parts.c_tilde,
-        &out_of_bounds_z,
-        &parts.hints,
-        ML_DSA_44,
-    )
-    .unwrap();
+    let encoded = sig_encode(&parts.c_tilde, &out_of_bounds_z, &parts.hints, ML_DSA_44).unwrap();
     let out_of_bounds_signature = Signature::from_raw(ML_DSA_44, encoded).unwrap();
 
-    assert!(!verify(
-        key_pair.public_key(),
-        message,
-        &out_of_bounds_signature,
-        b""
-    )
-    .unwrap());
+    assert!(
+        !verify(
+            key_pair.public_key(),
+            message,
+            &out_of_bounds_signature,
+            b""
+        )
+        .unwrap()
+    );
 }
 
 #[test]

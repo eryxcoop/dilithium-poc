@@ -3,6 +3,10 @@ name = "dilithium-poc"
 version = "0.1.0"
 edition = "2024"
 
+[workspace]
+members = [".", "challenges"]
+resolver = "3"
+
 [features]
 default = ["std"]
 std = []

@@ -1,0 +1,17 @@
+[package]
+name = "dilithium-poc-challenges"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[features]
+default = []
+failure-challenges = []
+
+[dependencies]
+dilithium-poc = { path = ".." }
+
+[[example]]
+name = "transcript_smoke"
+path = "examples/transcript_smoke.rs"
+required-features = ["failure-challenges"]
