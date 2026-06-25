@@ -98,8 +98,8 @@ information statistically.
 
 ### Objective
 
-Demonstrate that skipping the final `c̃` recomputation check makes structural
-forgery trivial.
+Forge a signature for a chosen message against a verifier that reconstructs the
+ML-DSA verification equation but skips the final `c̃` recomputation check.
 
 ### Bug
 
@@ -107,16 +107,22 @@ The vulnerable verifier skips `c̃ == H(μ || w1Encode(w₁′))`.
 
 ### Setup
 
-Toy structural verifier comparison.
+Real ML-DSA-44 key material, a target message `M`, and a context `ctx`. The
+broken verifier decodes `pk` and `sig`, computes `μ`, samples `c`, reconstructs
+`w₁′ = UseHint(h, Âz - c·t₁·2ᵈ)`, and checks the `z` and `ω` bounds, but it
+never compares the supplied `c̃` with `H(μ || w1Encode(w₁′), λ/4)`.
 
 ### Hint
 
-Without the Fiat-Shamir binding, an attacker can choose convenient `z`, `h`,
-and arbitrary `c̃`.
+Without the Fiat-Shamir binding, the reconstructed `w₁′` is computed but never
+bound back to the supplied challenge seed. The attacker can choose convenient
+bounded `z`, valid `h`, and a target-derived but unauthenticated `c̃`.
 
 ### Expected Result
 
-The vulnerable path accepts while the strict comparison rejects.
+The vulnerable `verify()` path accepts the forged `Signature` for the chosen
+message and even accepts the same signature for a different message. The real
+`PublicKey::verify` rejects both after recomputing `c̃′`.
 
 ### FIPS Defense
 

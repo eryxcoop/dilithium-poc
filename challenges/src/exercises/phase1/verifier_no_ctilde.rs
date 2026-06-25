@@ -1,7 +1,14 @@
 //! Exercise for `verifier_no_ctilde`.
 
-/// Returns whether a strict verifier should accept the supplied challenge seed.
-pub fn strict_ctilde_accepts(supplied_ctilde: &str, recomputed_ctilde: &str) -> bool {
-    let _ = (supplied_ctilde, recomputed_ctilde);
-    todo!("implement the strict verifier decision")
+use dilithium_poc::ml_dsa::{PublicKey, Signature};
+
+/// Builds a signature for `message` and `context` that a verifier missing the
+/// final `c̃` binding check would accept.
+pub fn forge_signature_without_ctilde_binding(
+    public_key: &PublicKey,
+    message: &[u8],
+    context: &[u8],
+) -> Signature {
+    let _ = (public_key, message, context);
+    todo!("forge a signature accepted by the broken verifier")
 }

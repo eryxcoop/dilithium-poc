@@ -1,9 +1,11 @@
 #![cfg(feature = "exercises")]
 
+use dilithium_poc::ml_dsa::KeyPair;
+use dilithium_poc::params::ML_DSA_44;
 use dilithium_poc_challenges::exercises::phase1::{
-    estimate_mask_bias_means, estimate_secret_from_biased_masks, recover_secret_from_reused_mask,
-    recover_toy_secret_by_search, strict_ctilde_accepts, strict_hint_weight_accepts,
-    strict_z_bound_accepts,
+    estimate_mask_bias_means, estimate_secret_from_biased_masks,
+    forge_signature_without_ctilde_binding, recover_secret_from_reused_mask,
+    recover_toy_secret_by_search, strict_hint_weight_accepts, strict_z_bound_accepts,
 };
 
 #[test]
@@ -26,9 +28,13 @@ fn biased_y_exercise_estimates_secret_coefficients() {
 }
 
 #[test]
-fn verifier_no_ctilde_exercise_rejects_mismatch() {
-    assert!(strict_ctilde_accepts("same", "same"));
-    assert!(!strict_ctilde_accepts("attacker", "recomputed"));
+fn verifier_no_ctilde_exercise_forges_chosen_message_signature() {
+    let key_pair = KeyPair::generate_from_seed(ML_DSA_44, [0x44; 32]).unwrap();
+    let message = b"forged message";
+    let context = b"phase1";
+    let signature = forge_signature_without_ctilde_binding(key_pair.public_key(), message, context);
+
+    assert!(!key_pair.public_key().verify(message, &signature, context));
 }
 
 #[test]
