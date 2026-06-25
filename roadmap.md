@@ -174,6 +174,13 @@ Criterios de salida:
 
 ### M6 - RFC 9881 / PKIX
 
+Estado: cerrado para la POC. Queda implementada la feature `pkix` con OIDs
+RFC 9881, `AlgorithmIdentifier` DER sin parametros, `SubjectPublicKeyInfo`
+con clave publica cruda FIPS en BIT STRING, `OneAsymmetricKey` seed/expanded/
+both, chequeo de consistencia por defecto para `both` y validacion de KeyUsage.
+El modulo valida las estructuras PKIX que transportan ML-DSA; no intenta ser un
+parser X.509 completo.
+
 Entregables:
 
 - Feature `pkix`.

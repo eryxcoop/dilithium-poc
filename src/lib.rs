@@ -9,6 +9,8 @@ pub mod error;
 pub mod hints;
 pub mod ml_dsa;
 pub mod params;
+#[cfg(feature = "pkix")]
+pub mod pkix;
 pub mod poly;
 pub mod round;
 pub mod sampling;

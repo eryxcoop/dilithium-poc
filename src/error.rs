@@ -27,6 +27,12 @@ pub enum DilithiumError {
     },
     /// An encoded value was malformed or violated a FIPS 204 packing rule.
     MalformedEncoding(&'static str),
+    /// A DER/PKIX value was malformed or violated RFC 9881.
+    MalformedPkix(&'static str),
+    /// A PKIX private-key package carried inconsistent redundant material.
+    InconsistentPrivateKey(&'static str),
+    /// A PKIX `keyUsage` extension violates RFC 9881's ML-DSA rules.
+    InvalidKeyUsage(&'static str),
     /// A numeric value did not fit within the range required by the operation.
     ValueOutOfRange {
         /// Human-readable item name, such as `"packed coefficient"` or `"bit"`.

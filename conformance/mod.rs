@@ -9,6 +9,8 @@
 mod fixtures;
 mod keygen;
 mod models;
+#[cfg(feature = "pkix")]
+mod pkix;
 mod scope;
 mod siggen;
 mod sigver;

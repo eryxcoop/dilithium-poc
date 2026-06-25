@@ -12,9 +12,10 @@ FIPS 204 define el algoritmo ML-DSA. RFC 9881 define como transportar ML-DSA en 
 
 ## Estado
 
-Estado actual: M5 completo para conformidad FIPS 204 pure ML-DSA mediante
-vectores oficiales NIST CAVP/ACVP. La codificacion PKIX/DER de RFC 9881 queda
-para el milestone especifico de PKIX.
+Estado actual: M6 completo para conformidad FIPS 204 pure ML-DSA y wrappers
+PKIX/DER de RFC 9881. La suite `conformance/` valida vectores oficiales NIST
+CAVP/ACVP para KeyGen/Sign/Verify y snapshots/negativos PKIX para OIDs,
+`AlgorithmIdentifier`, `SubjectPublicKeyInfo`, `OneAsymmetricKey` y KeyUsage.
 
 Ya existe documentacion de trabajo:
 
@@ -25,7 +26,7 @@ Ya existe documentacion de trabajo:
 - `docs/CRYSTALS_Dilithium_Clean.md`: contexto tecnico no normativo sobre Dilithium/ML-DSA.
 - `scripts/extract-fips204-text.sh`: genera `tmp/fips204.txt` desde el PDF local usando `pdftotext`.
 - `conformance/`: vectores oficiales ACVP y runner de conformidad para
-  `keyGen`, `sigGen` y `sigVer`.
+  `keyGen`, `sigGen`, `sigVer` y reglas PKIX/RFC 9881.
 
 ## Alcance
 
@@ -55,6 +56,8 @@ cargo test --all-features
 ```
 
 La API pure ML-DSA vive en `dilithium_poc::ml_dsa`.
+La API PKIX/RFC 9881 vive detras de `--features pkix` en
+`dilithium_poc::pkix`.
 
 ## Criterio de exito
 
