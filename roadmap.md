@@ -205,6 +205,13 @@ Criterios de salida:
 
 ### M7 - Benchmarks y experimentos de parametros
 
+Estado: cerrado para la POC bajo la feature `m7-benchmarks`, que habilita
+`instrumentation`, `pkix` y `experimental-params`. Quedan agregados benchmarks
+Criterion de KeyGen/Sign/Verify, NTT, sampling, raw encode/decode y DER/PKIX;
+un bench ejecutable de rechazo; un barrido experimental de parametros; un
+reporte largo reproducible en `benches/m7-results.md`; y datos crudos en
+`benches/m7-criterion-results.csv`.
+
 Entregables:
 
 - Benchmarks Criterion:
@@ -229,8 +236,8 @@ Hipotesis a testear:
 
 Criterios de salida:
 
-- `cargo bench --bench sign_verify`
-- `cargo bench --bench rejection --features instrumentation`
+- `cargo bench --bench sign_verify --features m7-benchmarks`
+- `cargo bench --bench rejection --features m7-benchmarks`
 - Reporte `target/criterion` versionado solo como artefacto local, no como fuente.
 - Un resumen reproducible con CPU, Rust version, flags, commit/estado del repo y parametros usados.
 

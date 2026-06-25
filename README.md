@@ -12,10 +12,11 @@ FIPS 204 define el algoritmo ML-DSA. RFC 9881 define como transportar ML-DSA en 
 
 ## Estado
 
-Estado actual: M6 completo para conformidad FIPS 204 pure ML-DSA y wrappers
+Estado actual: M7 completo para conformidad FIPS 204 pure ML-DSA, wrappers
 PKIX/DER de RFC 9881. La suite `conformance/` valida vectores oficiales NIST
 CAVP/ACVP para KeyGen/Sign/Verify y snapshots/negativos PKIX para OIDs,
 `AlgorithmIdentifier`, `SubjectPublicKeyInfo`, `OneAsymmetricKey` y KeyUsage.
+Los benchmarks M7 viven bajo la feature `m7-benchmarks`.
 
 Ya existe documentacion de trabajo:
 
@@ -27,6 +28,8 @@ Ya existe documentacion de trabajo:
 - `scripts/extract-fips204-text.sh`: genera `tmp/fips204.txt` desde el PDF local usando `pdftotext`.
 - `conformance/`: vectores oficiales ACVP y runner de conformidad para
   `keyGen`, `sigGen`, `sigVer` y reglas PKIX/RFC 9881.
+- `benches/m7-results.md`: reporte largo reproducible de benchmarks M7.
+- `benches/m7-criterion-results.csv`: datos Criterion M7 en nanosegundos.
 
 ## Alcance
 
@@ -53,6 +56,7 @@ Comandos base del M0:
 cargo test
 cargo bench
 cargo test --all-features
+cargo bench --bench sign_verify --features m7-benchmarks
 ```
 
 La API pure ML-DSA vive en `dilithium_poc::ml_dsa`.

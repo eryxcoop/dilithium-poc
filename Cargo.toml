@@ -9,6 +9,7 @@ std = []
 pkix = ["dep:der", "dep:pkcs8", "dep:spki"]
 experimental-params = []
 instrumentation = []
+m7-benchmarks = ["experimental-params", "instrumentation", "pkix"]
 
 [dependencies]
 der = { version = "0.7", features = ["alloc", "oid"], optional = true }
@@ -25,8 +26,29 @@ serde_json = "1"
 [[bench]]
 name = "sampling"
 harness = false
+required-features = ["m7-benchmarks"]
 
 [[bench]]
 name = "signing_repetitions"
 harness = false
 required-features = ["instrumentation"]
+
+[[bench]]
+name = "sign_verify"
+harness = false
+required-features = ["m7-benchmarks"]
+
+[[bench]]
+name = "internals"
+harness = false
+required-features = ["m7-benchmarks"]
+
+[[bench]]
+name = "rejection"
+harness = false
+required-features = ["m7-benchmarks"]
+
+[[bench]]
+name = "param_sweep"
+harness = false
+required-features = ["m7-benchmarks"]

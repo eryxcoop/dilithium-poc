@@ -1,9 +1,18 @@
+use std::time::Duration;
+
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 
 use dilithium_poc::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87, PARAMETER_SETS};
 use dilithium_poc::sampling::{
     ExpandASeed, ExpandMaskSeed, ExpandSSeed, expand_a, expand_mask, expand_s, sample_in_ball,
 };
+
+fn criterion() -> Criterion {
+    Criterion::default()
+        .sample_size(50)
+        .measurement_time(Duration::from_secs(3))
+        .warm_up_time(Duration::from_millis(500))
+}
 
 fn bench_expand_a(c: &mut Criterion) {
     let mut group = c.benchmark_group("expand_a");
@@ -81,11 +90,9 @@ fn bench_sample_in_ball(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(
-    benches,
-    bench_expand_a,
-    bench_expand_s,
-    bench_expand_mask,
-    bench_sample_in_ball
-);
+criterion_group! {
+    name = benches;
+    config = criterion();
+    targets = bench_expand_a, bench_expand_s, bench_expand_mask, bench_sample_in_ball
+}
 criterion_main!(benches);
