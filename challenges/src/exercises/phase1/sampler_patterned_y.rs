@@ -1,10 +1,27 @@
 //! Exercise for `sampler_patterned_y`.
 
-/// Recovers toy secret coefficients when the signer exposes a patterned `y`.
+/// Estimates toy `s₁` coefficients from a biased `y` sampler.
 ///
-/// The response is `z = y + c·s₁` coefficient-wise modulo `q`. Complete this
-/// for the classroom case where `c = 1`.
-pub fn recover_secret_from_patterned_mask(z: &[i64], patterned_y: &[i64], q: i64) -> Vec<i64> {
-    let _ = (z, patterned_y, q);
-    todo!("recover s₁ coefficients from z - y")
+/// Inputs are aggregated over signatures and only include positions where
+/// `cᵢ = 1`. For each coefficient index:
+///
+/// ```text
+/// E[zᵢ | cᵢ = 1] ≈ E[yᵢ] + s₁ᵢ
+/// ```
+///
+/// Complete this by averaging `zᵢ`, subtracting the known `y` bias mean,
+/// rounding to the nearest integer, and clamping to `[-η, η]`.
+pub fn estimate_secret_from_biased_masks(
+    sums_when_challenge_one: &[i64],
+    counts_when_challenge_one: &[usize],
+    bias_means: &[f64],
+    eta: i64,
+) -> Vec<i64> {
+    let _ = (
+        sums_when_challenge_one,
+        counts_when_challenge_one,
+        bias_means,
+        eta,
+    );
+    todo!("estimate s₁ from conditional means with η = 4")
 }

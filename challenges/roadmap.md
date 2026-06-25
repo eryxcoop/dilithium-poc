@@ -52,7 +52,7 @@ and map cleanly to the strongest security failures.
 | Challenge              | Bug                                 | Demo target                             | Impact                                       |
 | ---------------------- | ----------------------------------- | --------------------------------------- | -------------------------------------------- |
 | `nonce_reuse`          | Reuse the same `y` / `ρ″,κ`         | Real or near-real controlled signatures | Recover `s1` or a signing-equivalent secret  |
-| `sampler_patterned_y`  | Patterned mask sampler              | Toy or reduced setting                  | Leak equations while signatures still verify |
+| `sampler_patterned_y`  | Position-biased mask sampler        | Toy or reduced setting                  | Leak `s1` statistically while signatures verify |
 | `verifier_no_ctilde`   | Skip `c̃ == H(μ \|\| w1Encode(w1′))` | Toy or real structural signature        | Trivial forgery                              |
 | `verifier_no_z_bound`  | Skip `\|\|z\|\|∞ < γ₁ - β`          | Toy params                              | Forgery outside the short-vector domain      |
 | `verifier_no_omega`    | Accept dense/malformed `h`          | Toy params plus strict comparison       | Hint-assisted forgery or malleability        |

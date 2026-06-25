@@ -52,30 +52,46 @@ signatures derive fresh domains so accepted signatures do not reuse `y`.
 
 ### Objective
 
-Show that a patterned mask sampler can leak equations about `s₁` even when the
-response shape still looks like `z = y + c·s₁`.
+Show that a statistically biased mask sampler can leak `s₁` over many valid
+looking signatures, even when no single signature directly reveals `y`.
 
 ### Bug
 
-The vulnerable signer replaces FIPS `ExpandMask(ρ″, κ)` with a repeated
-coefficient pattern.
+The vulnerable signer replaces FIPS `ExpandMask(ρ″, κ)` with a sampler whose
+mean depends on the coefficient position.
 
 ### Setup
 
-Toy params: a four-coefficient polynomial over a small ring.
+Toy stats with the ML-DSA-65 `s₁` shape: `η = 4`, `l = 5`, `n = 256`, so the
+secret has 1280 coefficients. The demo uses 512 signatures and a known
+position-dependent bias:
+
+```text
+even positions: E[yᵢ] = +2
+odd positions:  E[yᵢ] = -2
+```
 
 ### Hint
 
-If `y` is visibly patterned and `c = 1`, then `z - y = s₁`.
+Condition on positions where `cᵢ = 1`:
+
+```text
+E[zᵢ | cᵢ = 1] ≈ E[yᵢ] + s₁ᵢ
+```
+
+Average the observed `zᵢ`, subtract the known bias mean, round, and clamp to
+`[-η, η]`.
 
 ### Expected Result
 
-The transcript recovers the toy secret coefficients from one response.
+The transcript recovers all 1280 toy secret coefficients from aggregate
+statistics and prints the first eight recovered values.
 
 ### FIPS Defense
 
 FIPS 204 prescribes `ExpandMask(ρ″, κ)` and its coefficient distribution; a
-patterned sampler violates that signing distribution.
+position-biased sampler violates that signing distribution and can leak
+information statistically.
 
 ## verifier_no_ctilde
 

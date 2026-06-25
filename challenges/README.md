@@ -103,8 +103,8 @@ The first implementation track should prioritize the strongest classroom demos:
 
 1. `nonce_reuse`: force the same `y` / `ρ″,κ` in two signatures and recover
    `s1` or a signing-equivalent secret in a controlled setting.
-2. `sampler_patterned_y`: sample `y` with repeated coefficient structure and
-   show how signatures can still verify while leaking algebraic relations.
+2. `sampler_patterned_y`: sample `y` with a position-dependent mean bias and
+   show how many signatures can leak `s1` statistically.
 3. `verifier_no_ctilde`: remove `c̃ == H(μ || w1Encode(w1′))` and demonstrate
    a trivial forgery.
 4. `verifier_no_z_bound`: remove `||z||∞ < γ₁ - β` and accept responses outside
