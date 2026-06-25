@@ -60,7 +60,7 @@ FIPS tambien lista entropia del desafio y repeticiones esperadas:
 
 KeyGen externo:
 
-- Genera seed `xi` de 32 bytes.
+- Genera seed `xi` de 32 bytes usando el RBG del sistema operativo via `getrandom::fill`.
 - Llama a `ML-DSA.KeyGen_internal(xi)`.
 
 KeyGen interno:
@@ -78,7 +78,7 @@ Sign externo:
 
 - Recibe `sk`, mensaje `M` y contexto `ctx`.
 - Si `ctx.len() > 255`, falla.
-- Variante hedged por defecto: genera `rnd` de 32 bytes.
+- Variante hedged por defecto: genera `rnd` de 32 bytes usando el RBG del sistema operativo via `getrandom::fill`.
 - Variante deterministica solo para tests/KAT: `rnd = [0; 32]`.
 - Forma `M' = 0x00 || len(ctx) || ctx || M` a nivel de bits/bytes segun FIPS.
 - Llama a `ML-DSA.Sign_internal(sk, M', rnd)`.
@@ -202,16 +202,27 @@ Metricas de parametros:
 
 Los experimentos con parametros alterados deben vivir bajo `experimental-params` y no deben exponer APIs conformes. Una firma generada con parametros alterados no es ML-DSA FIPS ni RFC 9881 aunque use nombres parecidos.
 
-## Dependencias sugeridas
+## Dependencias actuales y frontera
 
-- `sha3` para SHAKE128/SHAKE256.
-- `rand_core`; `rand_chacha` solo dev/test para reproducibilidad.
-- `criterion` solo dev para benchmarks.
-- `zeroize` para secretos.
-- `subtle` para comparaciones/checks constantes donde aplique.
-- Bajo feature `pkix`: `der`, `spki`, `pkcs8`, `x509-cert`, `const-oid`, `pem-rfc7468`.
+- `shake` implementa SHAKE128/SHAKE256, que son las XOF usadas por FIPS 204 como `G` y `H`.
+- `sha3` queda para la familia SHA-3. En RustCrypto 0.12, SHAKE vive en el crate separado `shake`; no volver a importar `Shake128`/`Shake256` desde `sha3`.
+- `getrandom` es la unica fuente de entropia del sistema operativo usada por las APIs externas `ML-DSA.KeyGen()` y hedged `ML-DSA.Sign()`. El helper interno esta en `src/ml_dsa/random.rs`.
+- No usar `rand_core::OsRng`: la migracion intencional es pedir bytes del OS directamente con `getrandom::fill`.
+- `criterion` es solo dev para benchmarks.
+- Bajo feature `pkix`: `der`, `spki` y `pkcs8` estan en la familia RustCrypto/formats actual (`der 0.8`, `spki 0.8`, `pkcs8 0.11`). `AlgorithmIdentifier.parameters` debe seguir ausente, nunca `NULL`.
+- `zeroize`, `subtle`, `x509-cert`, `const-oid` o `pem-rfc7468` pueden considerarse si una tarea futura los necesita, pero no agregarlos sin una razon concreta.
 
 No usar un crate ML-DSA completo como implementacion principal. Puede usarse solo como oracle de tests diferenciales, si se documenta.
+
+## Verificacion esperada para cambios criptograficos
+
+- Cambios en SHAKE/XOF, sampling, encoding, signing, verification o dependencias criptograficas deben correr ACVP: `rtk cargo test acvp --all-features`.
+- Cambios en PKIX/RFC 9881 deben correr: `rtk cargo test --features pkix rfc9881_`.
+- Cierre estandar despues de tocar dependencias o rutas criptograficas:
+  - `rtk cargo test --all-features`
+  - `rtk cargo test`
+  - `rtk cargo check --benches --features m7-benchmarks`
+  - `rtk cargo clippy --all-targets --all-features -- -D warnings`
 
 ## Reglas de implementacion
 
