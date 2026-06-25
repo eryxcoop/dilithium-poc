@@ -6,6 +6,7 @@ publish = false
 
 [features]
 default = []
+exercises = []
 failure-challenges = []
 
 [dependencies]
@@ -14,4 +15,9 @@ dilithium-poc = { path = ".." }
 [[example]]
 name = "transcript_smoke"
 path = "examples/transcript_smoke.rs"
+required-features = ["failure-challenges"]
+
+[[example]]
+name = "phase1"
+path = "examples/phase1.rs"
 required-features = ["failure-challenges"]

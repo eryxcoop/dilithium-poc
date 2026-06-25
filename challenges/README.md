@@ -46,10 +46,16 @@ The challenge lab uses four guardrails:
 - Intentionally vulnerable runners must be gated by the `failure-challenges`
   feature. Normal workspace builds compile the harmless harness, not the future
   vulnerable demos.
+- Student exercise stubs are gated by the separate `exercises` feature. Those
+  tests are expected to fail until a student completes the missing functions.
 
 ## Challenge Shape
 
-Each challenge should eventually have the same structure:
+Lightweight challenge docs can live in a phase-level file such as
+[`phase1.md`](phase1.md). A challenge should get its own directory only when it
+has fixtures, expected-output snapshots, custom runners, or result artifacts.
+
+When a challenge grows beyond the phase-level doc, use this structure:
 
 ```text
 challenges/<challenge-name>/
@@ -80,7 +86,16 @@ Compile the intentionally vulnerable runner surface explicitly:
 ```bash
 cargo test -p dilithium-poc-challenges --features failure-challenges
 cargo run -p dilithium-poc-challenges --example transcript_smoke --features failure-challenges
+cargo run -p dilithium-poc-challenges --example phase1 --features failure-challenges
 ```
+
+Run the Phase 1 student exercises:
+
+```bash
+cargo test -p dilithium-poc-challenges --features exercises --test exercises_phase1
+```
+
+Those tests intentionally hit `todo!()` in a fresh checkout.
 
 ## First Track
 
@@ -98,6 +113,14 @@ The first implementation track should prioritize the strongest classroom demos:
    adversarial input, not harmless metadata.
 6. `toy_params_too_small`: reduce `τ`, `λ`, `k`, `l`, or `n` until exhaustive
    search or linear algebra becomes visible.
+
+The Phase 1 demos are implemented as deterministic transcript runners under
+`challenges/src/failures/phase1/`. They are intentionally small and
+classroom-oriented: some use toy algebra, while verifier failures use
+strict-vs-vulnerable structural comparisons. The teaching notes live in
+[`phase1.md`](phase1.md). Student-facing stubs live under
+`challenges/src/exercises/phase1/` and are enabled only with the `exercises`
+feature.
 
 ## Extended Track
 

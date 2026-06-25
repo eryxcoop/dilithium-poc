@@ -26,6 +26,7 @@ conformant crate.
 - Use transcript-first runners under `challenges/src/shared/`, with examples for
   class output and tests for deterministic assertions.
 - Gate intentionally vulnerable runners behind `failure-challenges`.
+- Gate intentionally incomplete student exercises behind `exercises`.
 - Add a template README for each challenge.
 - Add CI-safe tests that assert vulnerable examples stay outside the FIPS path.
 - Document every intentional violation with the exact FIPS 204 or RFC 9881 rule.
@@ -36,12 +37,14 @@ Exit criteria:
   verifying.
 - Done: running normal ACVP/conformance tests does not depend on challenge code.
 - Done: vulnerable demos require an explicit `failure-challenges` feature.
-- Pending: add a per-challenge README template.
+- Done: student stubs require an explicit `exercises` feature.
+- Done: add `challenges/template.md` for challenges that grow beyond a
+  phase-level doc.
 - Pending: add the first real vulnerable demo.
 
 ## Phase 1: Core Classroom Failures
 
-Status: `planned`
+Status: `demo`
 
 These are the first exercises to implement because they are direct, memorable,
 and map cleanly to the strongest security failures.
@@ -57,11 +60,16 @@ and map cleanly to the strongest security failures.
 
 Exit criteria:
 
-- Each challenge has an exploit runner.
-- Each challenge compares vulnerable acceptance against FIPS-path rejection when
-  applicable.
-- Each README explains the role of `ρ″`, `κ`, `μ`, `c̃`, `Â`, `∞`, `τ`, `λ`,
-  `γ₁`, `β`, or `ω` as relevant.
+- Done: each challenge has an exploit runner exposed by
+  `challenges/src/failures/phase1/` and the `phase1` example.
+- Done: each challenge has a matching student stub under
+  `challenges/src/exercises/phase1/` and a gated exercise test.
+- Done: verifier challenges compare vulnerable acceptance against strict FIPS
+  rejection conditions where applicable.
+- Done: `challenges/phase1.md` explains the role of `ρ″`, `κ`, `μ`, `c̃`,
+  `Â`, `∞`, `τ`, `λ`, `γ₁`, `β`, or `ω` as relevant.
+- Pending for `teaching-ready`: add expected full command output snapshots once
+  the classroom transcript wording stabilizes.
 
 ## Phase 2: Parameter-Specific Experiments
 
