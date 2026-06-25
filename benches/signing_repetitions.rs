@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::time::Instant;
 
-use dilithium_poc::ml_dsa::{KeyPair, sign_with_report};
+use dilithium_poc::ml_dsa::KeyPair;
 use dilithium_poc::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87, ParameterSet};
 
 const SAMPLES_PER_SET: usize = 1_024;
@@ -44,7 +44,9 @@ fn measure(parameter_set: ParameterSet) -> RepetitionStats {
 
     for sample in 0..SAMPLES_PER_SET {
         let message = format!("signing repetition sample {} #{sample}", parameter_set.name);
-        let signed = sign_with_report(key_pair.private_key(), message.as_bytes(), b"bench")
+        let signed = key_pair
+            .private_key()
+            .sign_with_report(message.as_bytes(), b"bench")
             .expect("bench signing should succeed");
         stats.record(signed.report().attempts());
     }

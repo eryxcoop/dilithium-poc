@@ -1,8 +1,5 @@
 use super::*;
-use crate::ml_dsa::{
-    KeyPair, PrivateKey, sign, sign_deterministic_for_test,
-    sign_deterministic_for_test_with_report, verify,
-};
+use crate::ml_dsa::{KeyPair, PrivateKey, verify};
 
 const TEST_SEED: [u8; 32] = [
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
@@ -42,8 +39,10 @@ fn deterministic_signature_verifies_and_reports_attempts() {
     let message = b"m4 deterministic signing";
     let context = b"poc";
 
-    let signed =
-        sign_deterministic_for_test_with_report(key_pair.private_key(), message, context).unwrap();
+    let signed = key_pair
+        .private_key()
+        .sign_deterministic_for_test_with_report(message, context)
+        .unwrap();
 
     assert!(signed.report().attempts() >= 1);
     assert!(verify(key_pair.public_key(), message, signed.signature(), context).unwrap());
@@ -54,12 +53,10 @@ fn deterministic_signing_reports_attempts_for_all_parameter_sets() {
     for parameter_set in [ML_DSA_44, ML_DSA_65, ML_DSA_87] {
         let key_pair = KeyPair::generate_from_seed(parameter_set, TEST_SEED).unwrap();
         let message = format!("attempt instrumentation for {}", parameter_set.name);
-        let signed = sign_deterministic_for_test_with_report(
-            key_pair.private_key(),
-            message.as_bytes(),
-            b"m4",
-        )
-        .unwrap();
+        let signed = key_pair
+            .private_key()
+            .sign_deterministic_for_test_with_report(message.as_bytes(), b"m4")
+            .unwrap();
 
         assert!(signed.report().attempts() >= 1);
         assert!(
@@ -77,7 +74,10 @@ fn deterministic_signing_reports_attempts_for_all_parameter_sets() {
 #[test]
 fn hedged_signature_verifies() {
     let key_pair = KeyPair::generate(ML_DSA_44).unwrap();
-    let signature = sign(key_pair.private_key(), b"m4 hedged signing", b"").unwrap();
+    let signature = key_pair
+        .private_key()
+        .sign(b"m4 hedged signing", b"")
+        .unwrap();
 
     assert!(verify(key_pair.public_key(), b"m4 hedged signing", &signature, b"").unwrap());
 }
@@ -86,7 +86,10 @@ fn hedged_signature_verifies() {
 fn altered_message_signature_or_public_key_fails_verification() {
     let key_pair = KeyPair::generate_from_seed(ML_DSA_44, TEST_SEED).unwrap();
     let message = b"message";
-    let signature = sign_deterministic_for_test(key_pair.private_key(), message, b"ctx").unwrap();
+    let signature = key_pair
+        .private_key()
+        .sign_deterministic_for_test(message, b"ctx")
+        .unwrap();
 
     assert!(!verify(key_pair.public_key(), b"messagf", &signature, b"ctx").unwrap());
 
@@ -105,8 +108,10 @@ fn altered_message_signature_or_public_key_fails_verification() {
 fn context_is_part_of_the_signed_domain() {
     let key_pair = KeyPair::generate_from_seed(ML_DSA_44, TEST_SEED).unwrap();
     let message = b"context binding regression";
-    let signature =
-        sign_deterministic_for_test(key_pair.private_key(), message, b"domain-a").unwrap();
+    let signature = key_pair
+        .private_key()
+        .sign_deterministic_for_test(message, b"domain-a")
+        .unwrap();
 
     assert!(verify(key_pair.public_key(), message, &signature, b"domain-a").unwrap());
     assert!(!verify(key_pair.public_key(), message, &signature, b"domain-b").unwrap());
@@ -116,9 +121,10 @@ fn context_is_part_of_the_signed_domain() {
 fn verifier_rejects_parameter_set_mismatch() {
     let public_key_pair = KeyPair::generate_from_seed(ML_DSA_44, TEST_SEED).unwrap();
     let signature_key_pair = KeyPair::generate_from_seed(ML_DSA_65, [0x42; 32]).unwrap();
-    let signature =
-        sign_deterministic_for_test(signature_key_pair.private_key(), b"parameter set", b"")
-            .unwrap();
+    let signature = signature_key_pair
+        .private_key()
+        .sign_deterministic_for_test(b"parameter set", b"")
+        .unwrap();
 
     assert!(
         !verify(
@@ -135,7 +141,10 @@ fn verifier_rejects_parameter_set_mismatch() {
 fn verifier_rejects_structurally_valid_signature_when_z_exceeds_infinity_norm_bound() {
     let key_pair = KeyPair::generate_from_seed(ML_DSA_44, TEST_SEED).unwrap();
     let message = b"z infinity norm regression";
-    let signature = sign_deterministic_for_test(key_pair.private_key(), message, b"").unwrap();
+    let signature = key_pair
+        .private_key()
+        .sign_deterministic_for_test(message, b"")
+        .unwrap();
     let parts = sig_decode(signature.as_bytes(), ML_DSA_44).unwrap();
     let bound = (ML_DSA_44.core.gamma1 - ML_DSA_44.core.beta) as i32;
 
@@ -162,7 +171,10 @@ fn context_longer_than_255_bytes_is_rejected() {
     let too_long = vec![0u8; 256];
 
     assert_eq!(
-        sign_deterministic_for_test(key_pair.private_key(), b"message", &too_long).unwrap_err(),
+        key_pair
+            .private_key()
+            .sign_deterministic_for_test(b"message", &too_long)
+            .unwrap_err(),
         DilithiumError::InvalidLength {
             expected: 255,
             actual: 256,
@@ -170,7 +182,10 @@ fn context_longer_than_255_bytes_is_rejected() {
         }
     );
 
-    let signature = sign_deterministic_for_test(key_pair.private_key(), b"message", b"").unwrap();
+    let signature = key_pair
+        .private_key()
+        .sign_deterministic_for_test(b"message", b"")
+        .unwrap();
     assert_eq!(
         verify(key_pair.public_key(), b"message", &signature, &too_long).unwrap_err(),
         DilithiumError::InvalidLength {

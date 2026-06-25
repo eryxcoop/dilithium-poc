@@ -3,9 +3,7 @@ use std::time::Duration;
 
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 
-use dilithium_poc::ml_dsa::{
-    KeyPair, sign_deterministic_for_test, sign_deterministic_for_test_with_report, verify,
-};
+use dilithium_poc::ml_dsa::{KeyPair, verify};
 use dilithium_poc::params::{PARAMETER_SETS, ParameterSet};
 
 fn criterion() -> Criterion {
@@ -45,12 +43,9 @@ fn bench_sign(c: &mut Criterion) {
             &parameter_set,
             |b, &_ps| {
                 b.iter(|| {
-                    sign_deterministic_for_test(
-                        black_box(key_pair.private_key()),
-                        black_box(&message),
-                        black_box(b"m7"),
-                    )
-                    .unwrap();
+                    black_box(key_pair.private_key())
+                        .sign_deterministic_for_test(black_box(&message), black_box(b"m7"))
+                        .unwrap();
                 });
             },
         );
@@ -71,12 +66,12 @@ fn bench_sign_with_report(c: &mut Criterion) {
             &parameter_set,
             |b, &_ps| {
                 b.iter(|| {
-                    sign_deterministic_for_test_with_report(
-                        black_box(key_pair.private_key()),
-                        black_box(&message),
-                        black_box(b"m7"),
-                    )
-                    .unwrap();
+                    black_box(key_pair.private_key())
+                        .sign_deterministic_for_test_with_report(
+                            black_box(&message),
+                            black_box(b"m7"),
+                        )
+                        .unwrap();
                 });
             },
         );
@@ -92,8 +87,10 @@ fn bench_verify(c: &mut Criterion) {
         let key_pair =
             KeyPair::generate_from_seed(parameter_set, seed_for(parameter_set, 4)).unwrap();
         let message = message_for(parameter_set);
-        let signature =
-            sign_deterministic_for_test(key_pair.private_key(), &message, b"m7").unwrap();
+        let signature = key_pair
+            .private_key()
+            .sign_deterministic_for_test(&message, b"m7")
+            .unwrap();
         group.bench_with_input(
             BenchmarkId::from_parameter(parameter_set.name),
             &parameter_set,

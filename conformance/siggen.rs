@@ -1,6 +1,6 @@
 //! ACVP sigGen vector checks.
 
-use crate::ml_dsa::{PrivateKey, sign_deterministic_for_test, sign_with_randomness_for_test};
+use crate::ml_dsa::PrivateKey;
 
 use super::fixtures::{SIGGEN_EXPECTED, SIGGEN_PROMPT};
 use super::models::{AcvpFile, SigGenExpectedGroup, SigGenPromptGroup};
@@ -33,10 +33,9 @@ fn acvp_siggen_pure_external_vectors_match_official_expected_results() {
             let message = hex_bytes(required(&test.message));
             let context = hex_bytes(required(&test.context));
             let signature = if group.deterministic {
-                sign_deterministic_for_test(&private_key, &message, &context)
+                private_key.sign_deterministic_for_test(&message, &context)
             } else {
-                sign_with_randomness_for_test(
-                    &private_key,
+                private_key.sign_with_randomness_for_test(
                     &message,
                     &context,
                     fixed_bytes(required(&test.rnd)),

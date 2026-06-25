@@ -7,7 +7,7 @@ use dilithium_poc::coefficient::Coefficient;
 use dilithium_poc::encoding::{
     pk_decode, pk_encode, sig_decode, sig_encode, sk_decode, sk_encode, w1_encode,
 };
-use dilithium_poc::ml_dsa::{KeyPair, sign_deterministic_for_test};
+use dilithium_poc::ml_dsa::KeyPair;
 use dilithium_poc::params::{PARAMETER_SETS, ParameterSet};
 use dilithium_poc::pkix::{
     PkixPrivateKey, decode_subject_public_key_info, encode_one_asymmetric_key,
@@ -108,8 +108,10 @@ fn bench_encoding(c: &mut Criterion) {
         let key_pair =
             KeyPair::generate_from_seed(parameter_set, seed32(parameter_set, 5)).unwrap();
         let message = format!("M7 encoding benchmark {}", parameter_set.name);
-        let signature =
-            sign_deterministic_for_test(key_pair.private_key(), message.as_bytes(), b"m7").unwrap();
+        let signature = key_pair
+            .private_key()
+            .sign_deterministic_for_test(message.as_bytes(), b"m7")
+            .unwrap();
         let public_parts = pk_decode(key_pair.public_key().as_bytes(), parameter_set).unwrap();
         let private_parts = sk_decode(key_pair.private_key().as_bytes(), parameter_set).unwrap();
         let signature_parts = sig_decode(signature.as_bytes(), parameter_set).unwrap();

@@ -13,12 +13,5 @@ mod types;
 mod verify;
 
 pub use keygen::KeygenSeed;
-pub use sign::sign;
-#[cfg(test)]
-pub(crate) use sign::sign_with_randomness_for_test;
-#[cfg(feature = "instrumentation")]
-pub use sign::sign_with_report;
-#[cfg(any(test, feature = "instrumentation"))]
-pub use sign::{sign_deterministic_for_test, sign_deterministic_for_test_with_report};
 pub use types::{KeyPair, PrivateKey, PublicKey, Signature, SignatureWithReport, SigningReport};
 pub use verify::{verify, verify_lengths};

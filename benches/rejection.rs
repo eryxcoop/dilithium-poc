@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::time::Instant;
 
-use dilithium_poc::ml_dsa::{KeyPair, sign_deterministic_for_test_with_report};
+use dilithium_poc::ml_dsa::KeyPair;
 use dilithium_poc::params::{PARAMETER_SETS, ParameterSet};
 
 const SAMPLES_PER_SET: usize = 128;
@@ -39,12 +39,10 @@ fn measure(parameter_set: ParameterSet) -> RejectionStats {
 
     for sample in 0..SAMPLES_PER_SET {
         let message = format!("M7 rejection sample {} #{sample}", parameter_set.name);
-        let signed = sign_deterministic_for_test_with_report(
-            key_pair.private_key(),
-            message.as_bytes(),
-            b"m7",
-        )
-        .unwrap();
+        let signed = key_pair
+            .private_key()
+            .sign_deterministic_for_test_with_report(message.as_bytes(), b"m7")
+            .unwrap();
         stats.record(signed.report());
     }
 
