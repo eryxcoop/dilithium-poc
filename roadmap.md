@@ -235,7 +235,9 @@ Hipotesis a testear:
 - Los challenges educativos deben cubrir tanto leaks de medias como leaks de
   borde: si una implementacion usa `gamma1` en vez de `gamma1 - beta`, las
   firmas aceptadas en la franja prohibida pueden actuar como oracle estadistico
-  sobre `c·s1`.
+  sobre `c·s1`; si usa `gamma2` en vez de `gamma2 - beta`, los `r0` aceptados
+  cerca del borde de low bits pueden actuar como oracle estadistico sobre
+  `c·s2`.
 - Los parametros RFC no son parametros criptograficos adicionales: fijan identificadores y codificacion de transporte. Su "correccion" se mide por interoperabilidad DER/PKIX, ausencia de parametros y OIDs correctos.
 
 Criterios de salida:

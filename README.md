@@ -46,18 +46,6 @@ Out of scope:
 - Treating historical CRYSTALS-Dilithium vectors as byte-for-byte ML-DSA
   conformance evidence unless they are explicitly adapted to FIPS 204.
 
-## Current Status
-
-The repo currently includes the M7 milestone work:
-
-- FIPS 204 pure ML-DSA implementation for all three standard parameter sets.
-- RFC 9881 PKIX/DER wrappers behind the `pkix` feature.
-- Official NIST ACVP/CAVP coverage for `keyGen`, `sigGen`, and `sigVer`.
-- PKIX negative and positive tests for RFC 9881 OIDs, absent parameters, SPKI,
-  private-key CHOICEs, `OneAsymmetricKey`, and `keyUsage`.
-- Reproducible M7 benchmark reports under `benches/`.
-- Research notes and scaffolding for future "what can go wrong" challenges.
-
 ## Quick Start
 
 Run the default unit tests:
@@ -121,13 +109,13 @@ and live in `dilithium_poc::pkix`.
 
 ## Cargo Features
 
-| Feature | Purpose |
-| --- | --- |
-| `std` | Default feature for ordinary host builds. |
-| `pkix` | Enables RFC 9881 DER/PKIX helpers using `der`, `spki`, and `pkcs8`. |
-| `instrumentation` | Exposes aggregate signing/sampling reports and deterministic test signing helpers. |
-| `experimental-params` | Enables non-standard parameter metadata for controlled experiments. |
-| `m7-benchmarks` | Enables benchmark-only paths; includes `experimental-params`, `instrumentation`, and `pkix`. |
+| Feature               | Purpose                                                                                      |
+| --------------------- | -------------------------------------------------------------------------------------------- |
+| `std`                 | Default feature for ordinary host builds.                                                    |
+| `pkix`                | Enables RFC 9881 DER/PKIX helpers using `der`, `spki`, and `pkcs8`.                          |
+| `instrumentation`     | Exposes aggregate signing/sampling reports and deterministic test signing helpers.           |
+| `experimental-params` | Enables non-standard parameter metadata for controlled experiments.                          |
+| `m7-benchmarks`       | Enables benchmark-only paths; includes `experimental-params`, `instrumentation`, and `pkix`. |
 
 The `instrumentation` and `experimental-params` features are for measurement,
 tests, and experiments. They should not be exposed as production APIs.
@@ -158,12 +146,12 @@ tests.
 
 Current coverage:
 
-| Suite | Scope |
-| --- | --- |
-| `ML-DSA-keyGen-FIPS204` | Key generation from official seeds for ML-DSA-44/65/87. |
-| `ML-DSA-sigGen-FIPS204` | Pure external deterministic and randomized signing. |
-| `ML-DSA-sigVer-FIPS204` | Pure external verification, including negative cases. |
-| RFC 9881 PKIX | OIDs, absent parameters, SPKI, private-key CHOICEs, `OneAsymmetricKey`, and `keyUsage`. |
+| Suite                   | Scope                                                                                   |
+| ----------------------- | --------------------------------------------------------------------------------------- |
+| `ML-DSA-keyGen-FIPS204` | Key generation from official seeds for ML-DSA-44/65/87.                                 |
+| `ML-DSA-sigGen-FIPS204` | Pure external deterministic and randomized signing.                                     |
+| `ML-DSA-sigVer-FIPS204` | Pure external verification, including negative cases.                                   |
+| RFC 9881 PKIX           | OIDs, absent parameters, SPKI, private-key CHOICEs, `OneAsymmetricKey`, and `keyUsage`. |
 
 Run:
 
@@ -199,7 +187,8 @@ Recorded benchmark artifacts:
 
 The `challenges/` directory is reserved for intentionally vulnerable examples:
 nonce reuse, broken samplers, boundary leaks from bad `γ₁ - β` rejection,
-missing verifier checks, permissive parsers, and toy parameter failures.
+low-bit boundary leaks from bad `γ₂ - β` rejection, missing verifier checks,
+permissive parsers, and toy parameter failures.
 
 Challenge code lives in a separate workspace member named
 `dilithium-poc-challenges`. Harmless scaffolding, including toy algebra and the
@@ -242,23 +231,3 @@ Official references:
 
 - [FIPS 204: Module-Lattice-Based Digital Signature Standard][fips-204]
 - [RFC 9881: Use of ML-DSA in PKIX][rfc-9881]
-
-## Success Criteria
-
-This POC is considered aligned with its current goal when:
-
-- Key, signature, and encoded object sizes match FIPS 204 and RFC 9881.
-- KeyGen, Sign, and Verify pass official or reproducible conformance vectors.
-- Malformed or altered public keys, signatures, hints, contexts, and PKIX
-  wrappers are rejected.
-- `AlgorithmIdentifier.parameters` is absent, never DER `NULL`.
-- `SubjectPublicKeyInfo.subjectPublicKey` carries the raw FIPS public key in an
-  octet-aligned BIT STRING.
-- RFC 9881 seed, expanded-key, and `both` private-key forms are encoded and
-  validated correctly.
-- Benchmarks are reproducible for ML-DSA-44, ML-DSA-65, and ML-DSA-87.
-- Educational failure examples remain clearly isolated from the conformant
-  implementation.
-
-[fips-204]: https://doi.org/10.6028/NIST.FIPS.204
-[rfc-9881]: https://datatracker.ietf.org/doc/rfc9881/

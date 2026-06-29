@@ -3,11 +3,13 @@
 use dilithium_poc::ml_dsa::KeyPair;
 use dilithium_poc::params::ML_DSA_44;
 use dilithium_poc_challenges::exercises::{
-    estimate_mask_bias_means, estimate_secret_from_biased_masks,
+    boundary_accepted_mask_count, estimate_mask_bias_means, estimate_secret_from_biased_masks,
     estimate_secret_from_unbounded_eta, forge_cross_message_with_short_lambda,
     forge_signature_with_dense_hints, forge_signature_without_ctilde_binding,
-    recover_secret_from_boundary_oracle, recover_secret_from_reused_mask,
-    recover_toy_secret_by_search, BoundaryObservation,
+    lowbits_accepted_noise_count, lowbits_boundary_shift, lowbits_log_likelihood,
+    recover_secret_from_boundary_oracle, recover_secret_from_lowbits_oracle,
+    recover_secret_from_reused_mask, recover_toy_secret_by_search, z_boundary_cyclic_convolution,
+    z_boundary_log_likelihood, z_boundary_shift, BoundaryObservation, LowBitsObservation,
 };
 use dilithium_poc_challenges::shared::{
     sample_ternary_seed, toy_message_representative, toy_u8_challenge_seed,
@@ -68,6 +70,38 @@ fn gamma1_beta_boundary_oracle_exercise_recovers_secret_from_edge_signatures() {
         recover_secret_from_boundary_oracle(&observations, 2),
         secret
     );
+}
+
+#[test]
+fn gamma1_boundary_exercise_helpers_explain_candidate_shifts() {
+    let challenge = vec![1, 0, -1];
+    let secret = vec![2, -1, 1];
+
+    assert_eq!(
+        z_boundary_cyclic_convolution(&challenge, &secret),
+        vec![1, -3, 2]
+    );
+    assert_eq!(z_boundary_shift(&challenge, &secret, 1), -3);
+    assert_eq!(boundary_accepted_mask_count(2, 16), 29);
+    assert!(z_boundary_log_likelihood(12, 2, 16).is_finite());
+}
+
+#[test]
+fn gamma2_lowbits_boundary_oracle_exercise_recovers_s2_from_lowbit_edges() {
+    let secret = vec![2, 0, -1, 1, -2, 1];
+    let observations = lowbits_observations(&secret, 128);
+
+    assert_eq!(recover_secret_from_lowbits_oracle(&observations, 2), secret);
+}
+
+#[test]
+fn gamma2_lowbits_exercise_helpers_explain_sign_flip() {
+    let challenge = vec![1, 0, -1];
+    let secret = vec![2, -1, 1];
+
+    assert_eq!(lowbits_boundary_shift(&challenge, &secret, 1), -3);
+    assert_eq!(lowbits_accepted_noise_count(-3, 16), 28);
+    assert!(lowbits_log_likelihood(-12, -3, 16).is_finite());
 }
 
 #[test]
@@ -209,6 +243,40 @@ fn boundary_observations(secret: &[i64], target_count: usize) -> Vec<BoundaryObs
 
         if vulnerable_accepts && edge_z.iter().any(Option::is_some) {
             observations.push(BoundaryObservation { challenge, edge_z });
+        }
+    }
+
+    observations
+}
+
+fn lowbits_observations(secret: &[i64], target_count: usize) -> Vec<LowBitsObservation> {
+    const TAU: usize = 3;
+    const GAMMA2: i64 = 16;
+    const BETA: i64 = 6;
+
+    let mut rng = SplitMix64::new(0x0006_2b17_0f00_d123);
+    let mut observations = Vec::with_capacity(target_count);
+
+    while observations.len() < target_count {
+        let challenge = sparse_challenge(&mut rng, secret.len(), TAU);
+        let c_times_secret = cyclic_convolution(&challenge, secret);
+        let mut edge_r0 = vec![None; secret.len()];
+        let mut vulnerable_accepts = true;
+
+        for (index, &shift) in c_times_secret.iter().enumerate() {
+            let noise = rng.range((2 * GAMMA2 - 1) as u64) as i64 - (GAMMA2 - 1);
+            let r0 = noise - shift;
+            if r0.abs() >= GAMMA2 {
+                vulnerable_accepts = false;
+                break;
+            }
+            if r0.abs() >= GAMMA2 - BETA {
+                edge_r0[index] = Some(r0);
+            }
+        }
+
+        if vulnerable_accepts && edge_r0.iter().any(Option::is_some) {
+            observations.push(LowBitsObservation { challenge, edge_r0 });
         }
     }
 

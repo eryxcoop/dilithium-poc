@@ -201,6 +201,72 @@ The `γ₁ - β` margin removes the edge band. Since `||c·s₁||∞ ≤ β`, ac
 only the inner range prevents the secret-dependent shift from deciding whether
 `z` appears near `±γ₁`.
 
+## gamma2_lowbits_boundary_oracle
+
+### Objective
+
+Recover a toy `s₂` from accepted signatures whose low bits should have been
+rejected by the `γ₂ - β` bound.
+
+### Bug
+
+The vulnerable signer checks only `||r₀||∞ < γ₂` instead of the ML-DSA-style
+margin `||r₀||∞ < γ₂ - β`.
+
+### Setup
+
+Toy params: `n = 6`, `η = 2`, `τ = 3`, `β = τ·η = 6`, and `γ₂ = 16`. Instead
+of modeling the full `LowBits(w - c·s₂)` pipeline, the challenge isolates the
+statistical shape:
+
+```text
+r₀,j = noise_j - (c·s₂)_j
+```
+
+The attacker keeps only accepted signatures with at least one low-bit
+coordinate in the forbidden band:
+
+```text
+γ₂ - β ≤ |r₀,j| < γ₂
+```
+
+### Hint
+
+For a candidate secret `s`, compute `(c·s)_j` at each observed low-bit boundary
+coordinate. Because
+
+```text
+r₀,j = noise_j - (c·s₂)_j
+```
+
+the implied noise for a candidate is
+
+```text
+noise_j = r₀,j + (c·s)_j
+```
+
+A candidate is plausible only when that noise could have come from the low-bit
+noise range and survived the vulnerable `γ₂` check.
+
+Score candidates by boundary likelihood:
+
+```text
+score(s) = Σ log Pr[r₀,j is observed at the low-bit edge | (c·s)_j]
+```
+
+Then search over `s ∈ [-η, η]^n`.
+
+### Expected Result
+
+The transcript collects 128 low-bit boundary signatures and recovers the six
+coefficient toy `s₂` exactly.
+
+### FIPS Defense
+
+The `γ₂ - β` margin removes the low-bit edge band. Since `||c·s₂||∞ ≤ β`, the
+margin prevents the secret-dependent shift from deciding whether `r₀` sits
+near a rounding boundary.
+
 ## verifier_no_ctilde
 
 ### Objective

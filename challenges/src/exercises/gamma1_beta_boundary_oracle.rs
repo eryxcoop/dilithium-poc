@@ -58,3 +58,51 @@ pub fn recover_secret_from_boundary_oracle(
     let _ = (observations, eta);
     todo!("recover the toy secret from boundary observations")
 }
+
+/// Computes the toy cyclic product `left·right mod (xⁿ - 1)`.
+///
+/// Use this to evaluate `c·s` for a candidate secret.
+pub fn cyclic_convolution(left: &[i64], right: &[i64]) -> Vec<i64> {
+    let degree = right.len();
+    let mut product = vec![0; degree];
+
+    for output_index in 0..degree {
+        for input_index in 0..degree {
+            product[output_index] +=
+                left[input_index] * right[(output_index + degree - input_index) % degree];
+        }
+    }
+
+    product
+}
+
+/// Computes one coefficient `(c·s)_j` without materializing the full product.
+pub fn boundary_shift(challenge: &[i64], secret: &[i64], edge_index: usize) -> i64 {
+    let degree = secret.len();
+    challenge
+        .iter()
+        .enumerate()
+        .filter(|&(_, &coefficient)| coefficient != 0)
+        .map(|(challenge_index, &coefficient)| {
+            coefficient * secret[(edge_index + degree - challenge_index) % degree]
+        })
+        .sum()
+}
+
+/// Counts how many centered mask values would survive the vulnerable `γ₁`
+/// check for a given secret-dependent shift.
+pub fn accepted_mask_count(shift: i64, gamma1: i64) -> usize {
+    (-(gamma1 - 1)..=(gamma1 - 1))
+        .filter(|&y| (y + shift).abs() < gamma1)
+        .count()
+}
+
+/// Scores one observed boundary `z_j` under a candidate shift `(c·s)_j`.
+pub fn boundary_log_likelihood(z: i64, shift: i64, gamma1: i64) -> f64 {
+    let y = z - shift;
+    if !(-(gamma1 - 1)..=(gamma1 - 1)).contains(&y) || z.abs() >= gamma1 {
+        return -1_000_000.0;
+    }
+
+    -(accepted_mask_count(shift, gamma1) as f64).ln()
+}
