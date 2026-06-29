@@ -18,6 +18,6 @@ path = "examples/transcript_smoke.rs"
 required-features = ["failure-challenges"]
 
 [[example]]
-name = "phase1"
-path = "examples/phase1.rs"
+name = "classroom"
+path = "examples/classroom.rs"
 required-features = ["failure-challenges"]

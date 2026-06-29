@@ -1,21 +1,21 @@
-# Phase 1: Core Classroom Failures
+# Classroom Failures
 
 These demos are deterministic transcript runners exposed through:
 
 ```bash
-cargo run -p dilithium-poc-challenges --example phase1 --features failure-challenges
+cargo run -p dilithium-poc-challenges --example classroom --features failure-challenges
 ```
 
 They are intentionally small. The current shape keeps documentation in one file
-while the demos live under `challenges/src/failures/phase1/`. A challenge
+while the demos live under `challenges/src/failures/`. A challenge
 should get its own directory only when it has fixtures, expected-output
 snapshots, custom runners, or result artifacts.
 
-Student-facing stubs live under `challenges/src/exercises/phase1/` and are
+Student-facing stubs live under `challenges/src/exercises/` and are
 gated by the `exercises` feature:
 
 ```bash
-cargo test -p dilithium-poc-challenges --features exercises --test exercises_phase1
+cargo test -p dilithium-poc-challenges --features exercises --test exercises_failures
 ```
 
 Those tests are expected to fail until the exercise functions are completed.

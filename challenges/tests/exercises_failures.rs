@@ -2,7 +2,7 @@
 
 use dilithium_poc::ml_dsa::KeyPair;
 use dilithium_poc::params::ML_DSA_44;
-use dilithium_poc_challenges::exercises::phase1::{
+use dilithium_poc_challenges::exercises::{
     estimate_mask_bias_means, estimate_secret_from_biased_masks, estimate_secret_from_unbounded_eta,
     forge_signature_with_dense_hints, forge_signature_without_ctilde_binding,
     recover_secret_from_reused_mask, recover_toy_secret_by_search,
@@ -34,7 +34,7 @@ fn biased_y_exercise_estimates_secret_coefficients() {
 fn verifier_no_ctilde_exercise_forges_chosen_message_signature() {
     let key_pair = KeyPair::generate_from_seed(ML_DSA_44, [0x44; 32]).unwrap();
     let message = b"forged message";
-    let context = b"phase1";
+    let context = b"classroom";
     let signature = forge_signature_without_ctilde_binding(key_pair.public_key(), message, context);
 
     assert!(!key_pair.public_key().verify(message, &signature, context));
@@ -52,8 +52,8 @@ fn eta_unbounded_secret_exercise_recovers_wide_secret() {
 
 #[test]
 fn toy_dense_hint_forgery_exercise_finds_overweight_hint_solution() {
-    let message = b"phase1 dense hint forgery";
-    let context = b"phase1";
+    let message = b"classroom dense hint forgery";
+    let context = b"classroom";
     let (c_tilde, z, hints) = forge_signature_with_dense_hints(message, context);
 
     assert!(toy_dense_hint_vulnerable_accepts(message, context, c_tilde, &z, &hints));

@@ -1,13 +1,13 @@
 #![cfg(feature = "failure-challenges")]
 
-use dilithium_poc_challenges::failures::phase1::{
-    eta_unbounded_secret, nonce_reuse, phase1_runs, phase1_success, sampler_patterned_y,
+use dilithium_poc_challenges::failures::{
+    challenge_runs, challenges_success, eta_unbounded_secret, nonce_reuse, sampler_patterned_y,
     toy_dense_hint_forgery, toy_params_too_small, verifier_no_ctilde,
 };
 
 #[test]
-fn phase1_runs_are_available_in_roadmap_order() {
-    let runs = phase1_runs();
+fn challenge_runs_are_available_in_catalog_order() {
+    let runs = challenge_runs();
     let ids = runs.iter().map(|run| run.metadata().id).collect::<Vec<_>>();
 
     assert_eq!(
@@ -21,11 +21,11 @@ fn phase1_runs_are_available_in_roadmap_order() {
             "toy_params_too_small",
         ]
     );
-    assert!(phase1_success());
+    assert!(challenges_success());
 }
 
 #[test]
-fn phase1_transcripts_explain_bug_and_defense() {
+fn challenge_transcripts_explain_bug_and_defense() {
     for run in [
         nonce_reuse(),
         sampler_patterned_y(),

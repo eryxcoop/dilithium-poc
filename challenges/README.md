@@ -51,8 +51,8 @@ The challenge lab uses four guardrails:
 
 ## Challenge Shape
 
-Lightweight challenge docs can live in a phase-level file such as
-[`phase1.md`](phase1.md). A challenge should get its own directory only when it
+Lightweight challenge docs can live in a catalog-level file such as
+[`classroom.md`](classroom.md). A challenge should get its own directory only when it
 has fixtures, expected-output snapshots, custom runners, or result artifacts.
 
 When a challenge grows beyond the phase-level doc, use this structure:
@@ -86,13 +86,13 @@ Compile the intentionally vulnerable runner surface explicitly:
 ```bash
 cargo test -p dilithium-poc-challenges --features failure-challenges
 cargo run -p dilithium-poc-challenges --example transcript_smoke --features failure-challenges
-cargo run -p dilithium-poc-challenges --example phase1 --features failure-challenges
+cargo run -p dilithium-poc-challenges --example classroom --features failure-challenges
 ```
 
-Run the Phase 1 student exercises:
+Run the student exercise surface:
 
 ```bash
-cargo test -p dilithium-poc-challenges --features exercises --test exercises_phase1
+cargo test -p dilithium-poc-challenges --features exercises --test exercises_failures
 ```
 
 Those tests intentionally hit `todo!()` in a fresh checkout.
@@ -114,13 +114,12 @@ The first implementation track should prioritize the strongest classroom demos:
 6. `toy_params_too_small`: reduce `τ`, `λ`, `k`, `l`, or `n` until exhaustive
    search or linear algebra becomes visible.
 
-The Phase 1 demos are implemented as deterministic transcript runners under
-`challenges/src/failures/phase1/`. They are intentionally small and
+The current classroom demos are implemented as deterministic transcript runners
+under `challenges/src/failures/`. They are intentionally small and
 classroom-oriented: some use toy algebra, while verifier failures use
 strict-vs-vulnerable structural comparisons. The teaching notes live in
-[`phase1.md`](phase1.md). Student-facing stubs live under
-`challenges/src/exercises/phase1/` and are enabled only with the `exercises`
-feature.
+[`classroom.md`](classroom.md). Student-facing stubs live under
+`challenges/src/exercises/` and are enabled only with the `exercises` feature.
 
 ## Extended Track
 

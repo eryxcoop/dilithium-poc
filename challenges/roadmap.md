@@ -13,7 +13,7 @@ algebraic demos.
 - `verified`: demo has automated checks and expected output.
 - `teaching-ready`: README, exploit, FIPS comparison, and commands are polished.
 
-## Phase 0: Harness and Guardrails
+## Foundations
 
 Status: `scaffolded`
 
@@ -42,47 +42,47 @@ Exit criteria:
   phase-level doc.
 - Pending: add the first real vulnerable demo.
 
-## Phase 1: Core Classroom Failures
+## Current Catalog
 
 Status: `demo`
 
-These are the first exercises to implement because they are direct, memorable,
-and map cleanly to the strongest security failures.
+These are the current classroom challenges. They are direct, memorable, and map
+cleanly to strong security failures.
 
-| Challenge              | Bug                                 | Demo target                             | Impact                                       |
-| ---------------------- | ----------------------------------- | --------------------------------------- | -------------------------------------------- |
-| `nonce_reuse`          | Reuse the same `y` / `ρ″,κ`         | Real or near-real controlled signatures | Recover `s1` or a signing-equivalent secret  |
-| `sampler_patterned_y`  | Position-biased mask sampler        | Toy or reduced setting                  | Leak `s1` statistically while signatures verify |
-| `eta_unbounded_secret` | Skip the `|η|` bound on `s₁`        | Toy or reduced setting                  | Leak `s1` directly from averages of `z`      |
-| `verifier_no_ctilde`   | Skip `c̃ == H(μ \|\| w1Encode(w1′))` | Toy or real structural signature        | Trivial forgery                              |
-| `toy_dense_hint_forgery` | Accept dense `h` beyond `ω`       | Toy params                              | Forge a message without the private key      |
-| `toy_params_too_small` | Shrink `τ`, `λ`, `k`, `l`, or `n`   | Toy params                              | Exhaustive search or linear algebra attack   |
+| Challenge | Bug | Demo target | Impact |
+| --- | --- | --- | --- |
+| `nonce_reuse` | Reuse the same `y` / `ρ″,κ` | Real or near-real controlled signatures | Recover `s1` or a signing-equivalent secret |
+| `sampler_patterned_y` | Position-biased mask sampler | Toy or reduced setting | Leak `s1` statistically while signatures verify |
+| `eta_unbounded_secret` | Skip the `|η|` bound on `s₁` | Toy or reduced setting | Leak `s1` directly from averages of `z` |
+| `verifier_no_ctilde` | Skip `c̃ == H(μ \|\| w1Encode(w1′))` | Toy or real structural signature | Trivial forgery |
+| `toy_dense_hint_forgery` | Accept dense `h` beyond `ω` | Toy params | Forge a message without the private key |
+| `toy_params_too_small` | Shrink `τ`, `λ`, `k`, `l`, or `n` | Toy params | Exhaustive search or linear algebra attack |
 
 Exit criteria:
 
 - Done: each challenge has an exploit runner exposed by
-  `challenges/src/failures/phase1/` and the `phase1` example.
+  `challenges/src/failures/` and the `classroom` example.
 - Done: each challenge has a matching student stub under
-  `challenges/src/exercises/phase1/` and a gated exercise test.
+  `challenges/src/exercises/` and a gated exercise test.
 - Done: verifier challenges compare vulnerable acceptance against strict FIPS
   rejection conditions where applicable.
-- Done: `challenges/phase1.md` explains the role of `ρ″`, `κ`, `μ`, `c̃`,
+- Done: [`classroom.md`](classroom.md) explains the role of `ρ″`, `κ`, `μ`, `c̃`,
   `Â`, `∞`, `τ`, `λ`, `γ₁`, `β`, or `ω` as relevant.
 - Pending for `teaching-ready`: add expected full command output snapshots once
   the classroom transcript wording stabilizes.
 
-## Phase 2: Parameter-Specific Experiments
+## Parameter Experiments
 
 Status: `planned`
 
 These examples teach why the constants are coupled. They can be smaller and more
-experimental than Phase 1, but should still produce a concrete observable
-failure.
+experimental than the current classroom catalog, but should still produce a
+concrete observable failure.
 
 | Challenge                   | Parameter focus    | Demo idea                                              |
 | --------------------------- | ------------------ | ------------------------------------------------------ |
 | `tau_zero_forgery`          | `τ`                | Set `τ = 0`, make `c = 0`, forge by choosing short `z` |
-| `lambda_too_short`          | `λ`                | Truncate `c̃` and search for a challenge collision      |
+| `lambda_too_short`          | `λ`                | Truncate `c̃`, brute-force bounded transcripts, and use a collision in the short challenge seed to forge or malleate in toy params |
 | `eta_too_small`             | `η`                | Use `η = 0/1` and recover secrets by enumeration       |
 | `gamma1_edge_leak`          | `γ₁`, `β`          | Collect signatures and measure boundary bias in `z`    |
 | `gamma2_hint_pressure`      | `γ₂`, `ω`          | Show excessive carries or overpowered hints            |
@@ -95,7 +95,29 @@ Exit criteria:
 - Parameter changes are not exposed through normal public APIs.
 - Results are reproducible with deterministic seeds.
 
-## Phase 3: Parsing, Encoding, and Protocol Boundaries
+### Proposed `λ` Challenge
+
+Recommended next challenge: `lambda_too_short`.
+
+- Bug:
+  The vulnerable verifier/signature format truncates `c̃` below `λ/4` bytes.
+- Setup:
+  Use toy params with a real-looking verifier shape, bounded `z`, and either
+  zero hints or sparse valid hints.
+- Handle:
+  Search over many bounded candidate transcripts until two distinct
+  `w₁′` encodings land on the same short `c̃`. Because the verifier samples `c`
+  from the truncated seed, the attacker can replay one colliding seed against a
+  different transcript or target message in a way that becomes practical only
+  because `λ` is too short.
+- Expected result:
+  The vulnerable path accepts a forgery or malleated signature in toy params,
+  while the strict path using the full challenge length rejects it.
+- Teaching point:
+  `λ` is not cosmetic output length; it is the entropy budget that keeps
+  Fiat-Shamir challenge collisions out of reach.
+
+## Parsing, Encoding, and Protocol Boundaries
 
 Status: `planned`
 
@@ -117,7 +139,7 @@ Exit criteria:
 - PKIX examples cite RFC 9881 and use absent `parameters` as the conformant
   baseline.
 
-## Phase 4: Advanced Structure and Statistical Demos
+## Advanced Structure and Statistical Demos
 
 Status: `planned`
 

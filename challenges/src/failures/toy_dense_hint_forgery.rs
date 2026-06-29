@@ -16,8 +16,8 @@ const CHALLENGE_MODULUS: u8 = 16;
 pub fn run() -> ChallengeRun {
     let params = ToyParams::new(DEGREE, MODULUS).expect("toy params should be valid");
     let public_key = toy_public_key(params);
-    let message = b"phase1 dense hint forgery";
-    let context = b"phase1";
+    let message = b"classroom dense hint forgery";
+    let context = b"classroom";
     let replay_message = b"different message";
     let mu = toy_message_representative(message, context);
     let z_candidates = generate_z_candidates(params);

@@ -17,7 +17,7 @@ pub fn run() -> ChallengeRun {
     let key_pair = KeyPair::generate_from_seed(ML_DSA_44, [0x44; 32])
         .expect("fixed seed should generate an ML-DSA key pair");
     let message = b"forged message";
-    let context = b"phase1";
+    let context = b"classroom";
     let forged_signature = forge_for_target_message(key_pair.public_key(), message, context);
     let replay_message = b"different forged message";
     let strict_accepts = key_pair
@@ -314,7 +314,7 @@ mod tests {
     fn broken_path_accepts_chosen_message_forgery() {
         let key_pair = KeyPair::generate_from_seed(ML_DSA_44, [0x44; 32]).unwrap();
         let message = b"forged message";
-        let context = b"phase1";
+        let context = b"classroom";
         let signature = forge_for_target_message(key_pair.public_key(), message, context);
 
         assert!(broken_verify_no_ctilde(
@@ -330,7 +330,7 @@ mod tests {
     fn broken_path_still_rejects_structural_failures() {
         let key_pair = KeyPair::generate_from_seed(ML_DSA_44, [0x44; 32]).unwrap();
         let message = b"forged message";
-        let context = b"phase1";
+        let context = b"classroom";
         let signature = forge_for_target_message(key_pair.public_key(), message, context);
 
         let mismatched_signature =
