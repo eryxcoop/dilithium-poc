@@ -1,8 +1,14 @@
-//! Student-facing exercise stubs.
+//! Student-facing cryptography exercises.
 //!
-//! These modules are compiled only with the `exercises` feature. They contain
-//! intentionally incomplete functions that correspond to the solved demos under
-//! `crate::failures`.
+//! Each module is a small break-it-yourself challenge: a broken ML-DSA-shaped
+//! world, a few public artifacts, and one missing exploit.
+//!
+//! The functions here are intentionally incomplete. They mirror the solved
+//! demos under `crate::failures`, but keep the interesting step in the
+//! student's hands.
+//!
+//! Build with the `exercises` feature, pick a module, and make the tests go
+//! green. The math is toy-sized; the mistake is the real lesson.
 
 mod eta_unbounded_secret;
 mod lambda_too_short_cross_message;

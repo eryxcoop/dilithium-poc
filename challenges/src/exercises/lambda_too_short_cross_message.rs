@@ -1,4 +1,28 @@
-//! Exercise for `lambda_too_short_cross_message`.
+//! # Short `λ`, wrong message
+//!
+//! The signer honestly signs one message. You want a signature on another.
+//!
+//! The bug is not in the polynomial arithmetic. The bug is in the amount of
+//! Fiat-Shamir output the verifier bothers to check. The full toy challenge is
+//! 32 bits, but this verifier compares only the first 24:
+//!
+//! ```text
+//! prefix₂₄(H(μ_A || w1Encode(w₁,A))) =
+//! prefix₂₄(H(μ_B || w1Encode(w₁,B)))
+//! ```
+//!
+//! with `μ_A ≠ μ_B`.
+//!
+//! Find a legitimate signed-message transcript and an unsigned-message
+//! transcript whose checked prefixes collide. Then reuse the signed `c̃` while
+//! swapping in the forged response `z`.
+//!
+//! You are given deterministic candidate streams for both sides. One side
+//! behaves like the signer searching over bounded `y`; the other behaves like
+//! the attacker searching over bounded `z`.
+//!
+//! **Win condition:** forge a signature for `forged_message` that passes the
+//! short-`λ` verifier but fails the strict full-32-bit check.
 
 use crate::toy::{ToyParams, ToyPoly};
 

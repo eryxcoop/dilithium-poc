@@ -1,8 +1,30 @@
-//! Exercise for `verifier_no_ctilde`.
+//! # The missing `c̃` check
+//!
+//! A verifier reconstructs `w₁′`, nods at the bounds, accepts the hint
+//! encoding... and forgets the last line.
+//!
+//! In ML-DSA, the challenge seed is supposed to come back and bind the whole
+//! transcript:
+//!
+//! ```text
+//! c̃ ?= H(μ || w1Encode(w₁′))
+//! ```
+//!
+//! This exercise removes that final comparison. Your task is to build a
+//! structurally valid signature for an arbitrary `(message, context)` without
+//! knowing the private key.
+//!
+//! The helpers below are intentionally empty. Fill them in like a forger would:
+//! format the message, derive a plausible-looking `c̃`, choose a bounded
+//! nonzero `z`, attach valid hints, and encode the result at the exact
+//! ML-DSA-44 length.
+//!
+//! **Win condition:** the broken verifier accepts; the real verifier would
+//! reject because `c̃` is not actually bound to `w₁′`.
 
 use dilithium_poc::hints::HintsVector;
 use dilithium_poc::ml_dsa::{PublicKey, Signature};
-use dilithium_poc::params::{ML_DSA_44, ParameterSet};
+use dilithium_poc::params::{ParameterSet, ML_DSA_44};
 use dilithium_poc::poly::PolyVector;
 
 /// Builds a signature for `message` and `context` that a verifier missing the

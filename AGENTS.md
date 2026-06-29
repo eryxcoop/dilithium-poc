@@ -228,6 +228,12 @@ No usar un crate ML-DSA completo como implementacion principal. Puede usarse sol
 
 - Preferir Rust seguro; evitar `unsafe`.
 - Agregar rustdocs a cada estructura, enum, constante publica, campo publico y funcion publica que se introduzca.
+- Titulos de challenges en rustdocs:
+  - Usar un titulo humano y corto en Title Case como primer encabezado del modulo: `//! # Short λ, Wrong Message`.
+  - Evitar nombres internos con snake_case en el titulo; reservarlos para IDs, nombres de archivo, tests y metadatos.
+  - Nombrar la falla o intuicion principal, no la solucion completa: bueno `//! # Dense Hints`; malo `//! # Generate Z Candidates And Bypass Omega`.
+  - Usar simbolos Unicode cuando aclaren la matematica o el parametro criptografico (`λ`, `η`, `ω`, `μ`, `c̃`, `s₁`, `w₁′`, `≤`, `≈`).
+  - Mantener el titulo portable y legible en `cargo doc`: una linea, sin emojis, sin puntuacion decorativa.
 - Separar API segura de API de test:
   - segura: randomness generado dentro del modulo criptografico;
   - test/KAT: seeds y `rnd` inyectables;
