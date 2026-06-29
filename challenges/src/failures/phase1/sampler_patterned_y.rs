@@ -1,6 +1,8 @@
 //! `sampler_patterned_y`: biased masks leak statistically.
 
-use crate::shared::{ChallengeMetadata, ChallengeMode, ChallengeRun, Transcript};
+use crate::shared::{
+    ChallengeMetadata, ChallengeMode, ChallengeRun, SplitMix64, Transcript, rounded_prefix,
+};
 
 const ETA: i64 = 4;
 const L: usize = 5;
@@ -138,38 +140,4 @@ fn estimate_bias_means(mask_samples: &[Vec<i64>], coefficient_count: usize) -> V
     sums.into_iter()
         .map(|sum| sum as f64 / mask_samples.len() as f64)
         .collect()
-}
-
-fn rounded_prefix(values: &[f64], count: usize) -> Vec<f64> {
-    values
-        .iter()
-        .take(count)
-        .map(|value| (value * 100.0).round() / 100.0)
-        .collect()
-}
-
-struct SplitMix64 {
-    state: u64,
-}
-
-impl SplitMix64 {
-    fn new(seed: u64) -> Self {
-        Self { state: seed }
-    }
-
-    fn next(&mut self) -> u64 {
-        self.state = self.state.wrapping_add(0x9e37_79b9_7f4a_7c15);
-        let mut value = self.state;
-        value = (value ^ (value >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
-        value = (value ^ (value >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
-        value ^ (value >> 31)
-    }
-
-    fn range(&mut self, upper: u64) -> u64 {
-        self.next() % upper
-    }
-
-    fn bit(&mut self) -> u8 {
-        (self.next() >> 63) as u8
-    }
 }

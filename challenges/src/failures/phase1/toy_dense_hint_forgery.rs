@@ -1,7 +1,9 @@
 //! `toy_dense_hint_forgery`: overweight hints forge a toy signature.
 
 use crate::shared::{ChallengeMetadata, ChallengeMode, ChallengeRun, Transcript};
-use crate::toy::{ToyParams, ToyPoly};
+use crate::toy::{
+    ToyParams, ToyPoly, bits_from_mask, first_hint_positions, hint_weight, use_hints,
+};
 
 const DEGREE: usize = 8;
 const MODULUS: i64 = 97;
@@ -132,7 +134,7 @@ fn find_overweight_hint_forgery(
                     continue;
                 }
 
-                let w1_prime = toy_use_hints(&w_approx, &hints);
+                let w1_prime = use_hints(&w_approx, &hints, GAMMA2);
                 if toy_challenge_seed(mu, &w1_prime) == c_tilde {
                     return Some(ToySignature {
                         c_tilde,
@@ -176,7 +178,7 @@ fn vulnerable_verify_without_omega(
     let mu = toy_message_representative(message, context);
     let c = sample_challenge(signature.c_tilde);
     let w_approx = reconstruct_w_approx(public_key, &signature.z, c);
-    let w1_prime = toy_use_hints(&w_approx, &signature.hints);
+    let w1_prime = use_hints(&w_approx, &signature.hints, GAMMA2);
     toy_challenge_seed(mu, &w1_prime) == signature.c_tilde
 }
 
@@ -259,66 +261,4 @@ fn sample_challenge(c_tilde: u8) -> i64 {
         1 => 0,
         _ => 1,
     }
-}
-
-fn toy_use_hints(poly: &ToyPoly, hints: &[bool]) -> Vec<u8> {
-    poly.coeffs()
-        .iter()
-        .zip(hints.iter())
-        .map(|(&coefficient, &hint)| {
-            let (high, low) = toy_decompose(poly.params(), coefficient);
-            if !hint {
-                return high;
-            }
-            if low > 0 {
-                (high + 1) % high_modulus()
-            } else {
-                ((high as i64) - 1).rem_euclid(high_modulus() as i64) as u8
-            }
-        })
-        .collect()
-}
-
-fn toy_decompose(params: ToyParams, coefficient: i64) -> (u8, i64) {
-    let alpha = 2 * GAMMA2;
-    let reduced = params.reduce(coefficient);
-    let mut best: Option<(i64, bool, u8, i64)> = None;
-
-    for high in 0..high_modulus() {
-        let low = params.centered(reduced - high as i64 * alpha);
-        if low.abs() > GAMMA2 {
-            continue;
-        }
-
-        let candidate = (low.abs(), low <= 0, high, low);
-        if best.map(|current| candidate < current).unwrap_or(true) {
-            best = Some(candidate);
-        }
-    }
-
-    let (_, _, high, low) = best.expect("toy params should admit a decomposition");
-    (high, low)
-}
-
-fn high_modulus() -> u8 {
-    ((MODULUS - 1) / (2 * GAMMA2)) as u8
-}
-
-fn bits_from_mask(mask: usize, width: usize) -> Vec<bool> {
-    (0..width)
-        .map(|bit_index| ((mask >> bit_index) & 1) == 1)
-        .collect()
-}
-
-fn hint_weight(hints: &[bool]) -> usize {
-    hints.iter().filter(|&&hint| hint).count()
-}
-
-fn first_hint_positions(hints: &[bool], count: usize) -> Vec<usize> {
-    hints
-        .iter()
-        .enumerate()
-        .filter_map(|(index, hint)| hint.then_some(index))
-        .take(count)
-        .collect()
 }

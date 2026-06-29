@@ -1,6 +1,8 @@
 //! `eta_unbounded_secret`: wide secret coefficients leak through `z`.
 
-use crate::shared::{ChallengeMetadata, ChallengeMode, ChallengeRun, Transcript};
+use crate::shared::{
+    ChallengeMetadata, ChallengeMode, ChallengeRun, SplitMix64, Transcript, rounded_prefix,
+};
 
 const ETA: i64 = 2;
 const SECRET_MAX_ABS: i64 = 24;
@@ -45,12 +47,11 @@ pub fn run() -> ChallengeRun {
         &sums_when_challenge_minus_one,
         &counts_when_challenge_minus_one,
     );
-    let estimator_prefix = estimator_prefix(
+    let estimator_prefix = estimate_secret_f64(
         &sums_when_challenge_one,
         &counts_when_challenge_one,
         &sums_when_challenge_minus_one,
         &counts_when_challenge_minus_one,
-        8,
     );
     let min_positive_count = counts_when_challenge_one
         .iter()
@@ -79,7 +80,7 @@ pub fn run() -> ChallengeRun {
             "Estimator",
             format!(
                 "From {SIGNATURE_SAMPLES} signatures, every coefficient gets at least {min_positive_count} samples with cᵢ = 1 and {min_negative_count} with cᵢ = -1. Using E[zᵢ | cᵢ = 1] - E[zᵢ | cᵢ = -1] ≈ 2·s₁ᵢ gives first eight estimates {:?}.",
-                estimator_prefix
+                rounded_prefix(&estimator_prefix, 8)
             ),
         )
         .step(
@@ -130,56 +131,31 @@ fn estimate_secret(
     sums_when_challenge_minus_one: &[i64],
     counts_when_challenge_minus_one: &[usize],
 ) -> Vec<i64> {
-    sums_when_challenge_one
-        .iter()
-        .zip(counts_when_challenge_one.iter())
-        .zip(sums_when_challenge_minus_one.iter().zip(counts_when_challenge_minus_one.iter()))
-        .map(|((&sum_pos, &count_pos), (&sum_neg, &count_neg))| {
-            let mean_pos = sum_pos as f64 / count_pos as f64;
-            let mean_neg = sum_neg as f64 / count_neg as f64;
-            ((mean_pos - mean_neg) / 2.0).round() as i64
-        })
-        .collect()
+    estimate_secret_f64(
+        sums_when_challenge_one,
+        counts_when_challenge_one,
+        sums_when_challenge_minus_one,
+        counts_when_challenge_minus_one,
+    )
+    .into_iter()
+    .map(|estimate| estimate.round() as i64)
+    .collect()
 }
 
-fn estimator_prefix(
+fn estimate_secret_f64(
     sums_when_challenge_one: &[i64],
     counts_when_challenge_one: &[usize],
     sums_when_challenge_minus_one: &[i64],
     counts_when_challenge_minus_one: &[usize],
-    count: usize,
 ) -> Vec<f64> {
     sums_when_challenge_one
         .iter()
         .zip(counts_when_challenge_one.iter())
         .zip(sums_when_challenge_minus_one.iter().zip(counts_when_challenge_minus_one.iter()))
-        .take(count)
         .map(|((&sum_pos, &count_pos), (&sum_neg, &count_neg))| {
             let mean_pos = sum_pos as f64 / count_pos as f64;
             let mean_neg = sum_neg as f64 / count_neg as f64;
-            (((mean_pos - mean_neg) / 2.0) * 100.0).round() / 100.0
+            (mean_pos - mean_neg) / 2.0
         })
         .collect()
-}
-
-struct SplitMix64 {
-    state: u64,
-}
-
-impl SplitMix64 {
-    fn new(seed: u64) -> Self {
-        Self { state: seed }
-    }
-
-    fn next(&mut self) -> u64 {
-        self.state = self.state.wrapping_add(0x9e37_79b9_7f4a_7c15);
-        let mut value = self.state;
-        value = (value ^ (value >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
-        value = (value ^ (value >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
-        value ^ (value >> 31)
-    }
-
-    fn range(&mut self, upper: u64) -> u64 {
-        self.next() % upper
-    }
 }
