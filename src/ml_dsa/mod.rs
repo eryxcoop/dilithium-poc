@@ -6,11 +6,18 @@
 //! [`PublicKey`], [`PrivateKey`], and [`Signature`].
 
 mod context;
+#[cfg(feature = "instrumentation")]
+mod instrumentation;
 mod keygen;
 mod random;
 mod sign;
 mod types;
 mod verify;
 
+#[cfg(feature = "instrumentation")]
+pub use instrumentation::{
+    OverweightHintAttempt, find_overweight_hint_attempt,
+    verify_overweight_hint_attempt_without_omega,
+};
 pub use keygen::KeygenSeed;
 pub use types::{KeyPair, PrivateKey, PublicKey, Signature, SignatureWithReport, SigningReport};

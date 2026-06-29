@@ -52,3 +52,5 @@ mod algorithm;
 mod types;
 
 pub(crate) use types::{ChallengeSeed, MessageRepresentative};
+#[cfg(feature = "instrumentation")]
+pub(crate) use types::{SIGNING_RANDOMNESS_BYTES, SigningRandomness};

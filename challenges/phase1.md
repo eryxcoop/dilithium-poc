@@ -158,12 +158,12 @@ The vulnerable path accepts while the strict bound check rejects.
 ML-DSA accepts only if `||z||∞ < γ₁ - β`, preserving the short-response
 condition needed by the security argument.
 
-## verifier_no_omega
+## toy_dense_hint_forgery
 
 ### Objective
 
-Show why hint vectors `h` are adversarial input and must be bounded and
-canonical.
+Forge a toy signature for a chosen message without knowing the private key,
+using only dense hints that a broken verifier accepts.
 
 ### Bug
 
@@ -171,20 +171,35 @@ The vulnerable verifier accepts hint vectors with weight greater than `ω`.
 
 ### Setup
 
-Toy structural verifier comparison.
+Toy params with a nontrivial ring: `n = 8`, `q = 97`, `γ₂ = 8`, `ω = 2`, and
+`||z||∞ < 3`. The public key consists of one toy polynomial `a` and one public
+polynomial `t₁ = a·s` derived from a hidden toy secret `s`. The attacker knows
+only `a`, `t₁`, the target message, and the context.
 
 ### Hint
 
-Dense hints give the attacker too much control over `UseHint(h, w′)`.
+Search over bounded `z`, over binary hint vectors `h` with `weight(h) > ω`, and
+over toy `c̃` values. For each candidate, reconstruct
+
+```text
+w_approx = a·z - c·t₁
+```
+
+with `c = SampleChallenge(c̃)`, then apply `UseHint(h, w_approx)` coefficientwise.
+Dense hints give enough `±1 mod m` corrections on the high bits to make the
+recomputed `c̃' = H(μ || w₁')` land on the same `c̃`.
 
 ### Expected Result
 
-The transcript shows a hint weight above toy `ω` accepted only by the vulnerable
-path.
+The vulnerable path accepts a forged toy signature for the target message even
+though the search used no private key material. The strict verifier rejects the
+same forgery because `weight(h) > ω`, and replaying it on another message still
+fails because `c̃` remains bound to `μ`.
 
 ### FIPS Defense
 
-FIPS signature decoding and hint use reject malformed or over-`ω` hints.
+Sparse hints are part of the ML-DSA signature language. A verifier must reject
+over-`ω` hints before `UseHint` consumes attacker-controlled corrections.
 
 ## toy_params_too_small
 

@@ -109,8 +109,8 @@ The first implementation track should prioritize the strongest classroom demos:
    a trivial forgery.
 4. `verifier_no_z_bound`: remove `||z||∞ < γ₁ - β` and accept responses outside
    the short-vector domain.
-5. `verifier_no_omega`: accept dense or malformed hints and show why `h` is
-   adversarial input, not harmless metadata.
+5. `toy_dense_hint_forgery`: in toy params, use overweight hints to forge a
+   message without the private key while replay to another message still fails.
 6. `toy_params_too_small`: reduce `τ`, `λ`, `k`, `l`, or `n` until exhaustive
    search or linear algebra becomes visible.
 

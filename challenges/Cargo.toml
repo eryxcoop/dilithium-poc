@@ -7,7 +7,7 @@ publish = false
 [features]
 default = []
 exercises = []
-failure-challenges = []
+failure-challenges = ["dilithium-poc/instrumentation"]
 
 [dependencies]
 dilithium-poc = { path = ".." }
