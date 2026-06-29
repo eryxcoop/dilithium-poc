@@ -1,12 +1,11 @@
 //! CMS `AlgorithmIdentifier` encoding and strict decoding.
 
-use der::Encode;
 use der::asn1::ObjectIdentifier;
 
 use crate::error::{DilithiumError, DilithiumResult};
 use crate::params::ParameterSet;
 
-use crate::pkix::algorithm::algorithm_identifier;
+use crate::pkix::algorithm::MldsaAlgorithmIdentifier;
 use crate::pkix::cms::der::{DerElement, DerReader, DerValue};
 use crate::pkix::cms::digest::CmsDigestAlgorithm;
 use crate::pkix::oid::{ID_ML_DSA_44, ID_ML_DSA_65, ID_ML_DSA_87, parameter_set_for_oid};
@@ -17,9 +16,7 @@ pub(crate) struct AlgorithmIdentifierDer {
 
 impl AlgorithmIdentifierDer {
     pub(crate) fn for_signature(parameter_set: ParameterSet) -> DilithiumResult<Self> {
-        let bytes = algorithm_identifier(parameter_set)?.to_der().map_err(|_| {
-            DilithiumError::MalformedPkix("failed to encode CMS signature algorithm")
-        })?;
+        let bytes = MldsaAlgorithmIdentifier::new(parameter_set)?.to_der()?;
         Ok(Self { bytes })
     }
 

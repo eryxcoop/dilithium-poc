@@ -43,6 +43,21 @@ impl KeyUsage {
             || self.encipher_only
             || self.decipher_only
     }
+
+    /// Validates this `keyUsage` value against RFC 9881's ML-DSA rules.
+    pub fn validate_for_mldsa(self) -> DilithiumResult<()> {
+        if !self.has_mldsa_allowed_usage() {
+            return Err(DilithiumError::InvalidKeyUsage(
+                "ML-DSA keyUsage needs at least one signature/cert/CRL bit",
+            ));
+        }
+        if self.has_mldsa_forbidden_usage() {
+            return Err(DilithiumError::InvalidKeyUsage(
+                "ML-DSA keyUsage forbids key establishment and data encryption bits",
+            ));
+        }
+        Ok(())
+    }
 }
 
 /// Validates RFC 9881 `keyUsage` requirements for an ML-DSA public key.
@@ -52,15 +67,5 @@ impl KeyUsage {
 /// forbids `keyEncipherment`, `dataEncipherment`, `keyAgreement`,
 /// `encipherOnly`, and `decipherOnly`.
 pub fn validate_key_usage(key_usage: KeyUsage) -> DilithiumResult<()> {
-    if !key_usage.has_mldsa_allowed_usage() {
-        return Err(DilithiumError::InvalidKeyUsage(
-            "ML-DSA keyUsage needs at least one signature/cert/CRL bit",
-        ));
-    }
-    if key_usage.has_mldsa_forbidden_usage() {
-        return Err(DilithiumError::InvalidKeyUsage(
-            "ML-DSA keyUsage forbids key establishment and data encryption bits",
-        ));
-    }
-    Ok(())
+    key_usage.validate_for_mldsa()
 }
