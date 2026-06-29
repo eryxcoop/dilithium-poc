@@ -105,10 +105,10 @@ The first implementation track should prioritize the strongest classroom demos:
    `s1` or a signing-equivalent secret in a controlled setting.
 2. `sampler_patterned_y`: sample `y` with a position-dependent mean bias and
    show how many signatures can leak `s1` statistically.
-3. `verifier_no_ctilde`: remove `c̃ == H(μ || w1Encode(w1′))` and demonstrate
+3. `eta_unbounded_secret`: let `s1` escape the `|η|` bound and recover it from
+   averages of `z = y + c·s1`.
+4. `verifier_no_ctilde`: remove `c̃ == H(μ || w1Encode(w1′))` and demonstrate
    a trivial forgery.
-4. `verifier_no_z_bound`: remove `||z||∞ < γ₁ - β` and accept responses outside
-   the short-vector domain.
 5. `toy_dense_hint_forgery`: in toy params, use overweight hints to forge a
    message without the private key while replay to another message still fails.
 6. `toy_params_too_small`: reduce `τ`, `λ`, `k`, `l`, or `n` until exhaustive

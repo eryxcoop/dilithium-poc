@@ -94,6 +94,58 @@ FIPS 204 prescribes `ExpandMask(ρ″, κ)` and its coefficient distribution; a
 position-biased sampler violates that signing distribution and can leak
 information statistically.
 
+## eta_unbounded_secret
+
+### Objective
+
+Recover a wide toy `s₁` from valid-looking signatures when the implementation
+forgets to keep secret coefficients inside the `|η|` bound.
+
+### Bug
+
+The vulnerable signer samples or accepts `s₁` coefficients outside `[-η, η]`.
+
+### Setup
+
+Toy stats with a less tiny secret shape: `l = 5`, `n = 128`, so `s₁` has 640
+coefficients. The nominal ML-DSA-style bound is `η = 2`, but the broken path
+samples secrets in `[-24, 24]`. Each observed coefficient uses
+
+```text
+zᵢ = yᵢ + cᵢ·s₁ᵢ
+```
+
+with centered mask noise `yᵢ ∈ [-4,4]` and toy challenge coordinates
+`cᵢ ∈ {-1, 0, 1}`.
+
+### Hint
+
+Condition separately on `cᵢ = 1` and `cᵢ = -1`:
+
+```text
+E[zᵢ | cᵢ = 1]  ≈  s₁ᵢ
+E[zᵢ | cᵢ = -1] ≈ -s₁ᵢ
+```
+
+so
+
+```text
+(E[zᵢ | cᵢ = 1] - E[zᵢ | cᵢ = -1]) / 2 ≈ s₁ᵢ
+```
+
+When `s₁` is much wider than the mask, `c·s₁` dominates the noise and the
+secret becomes visible by averaging many signatures.
+
+### Expected Result
+
+The transcript uses 512 signatures to recover all 640 toy secret coefficients
+exactly.
+
+### FIPS Defense
+
+`ExpandS` and secret-key decoding must keep `s₁` and `s₂` inside `[-η, η]`;
+otherwise `z` stops hiding the secret statistically.
+
 ## verifier_no_ctilde
 
 ### Objective
@@ -128,35 +180,6 @@ message and even accepts the same signature for a different message. The real
 
 ML-DSA recomputes `c̃′ = H(μ || w1Encode(w₁′), λ/4)` and accepts only if
 `c̃′ == c̃`.
-
-## verifier_no_z_bound
-
-### Objective
-
-Show that accepting oversized `z` values leaves the intended short-vector
-domain.
-
-### Bug
-
-The vulnerable verifier skips `||z||∞ < γ₁ - β`.
-
-### Setup
-
-Toy params with an intentionally small bound.
-
-### Hint
-
-Choose a response whose equation might otherwise be accepted but whose `∞` norm
-is visibly larger than `γ₁ - β`.
-
-### Expected Result
-
-The vulnerable path accepts while the strict bound check rejects.
-
-### FIPS Defense
-
-ML-DSA accepts only if `||z||∞ < γ₁ - β`, preserving the short-response
-condition needed by the security argument.
 
 ## toy_dense_hint_forgery
 

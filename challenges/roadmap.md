@@ -53,8 +53,8 @@ and map cleanly to the strongest security failures.
 | ---------------------- | ----------------------------------- | --------------------------------------- | -------------------------------------------- |
 | `nonce_reuse`          | Reuse the same `y` / `ρ″,κ`         | Real or near-real controlled signatures | Recover `s1` or a signing-equivalent secret  |
 | `sampler_patterned_y`  | Position-biased mask sampler        | Toy or reduced setting                  | Leak `s1` statistically while signatures verify |
+| `eta_unbounded_secret` | Skip the `|η|` bound on `s₁`        | Toy or reduced setting                  | Leak `s1` directly from averages of `z`      |
 | `verifier_no_ctilde`   | Skip `c̃ == H(μ \|\| w1Encode(w1′))` | Toy or real structural signature        | Trivial forgery                              |
-| `verifier_no_z_bound`  | Skip `\|\|z\|\|∞ < γ₁ - β`          | Toy params                              | Forgery outside the short-vector domain      |
 | `toy_dense_hint_forgery` | Accept dense `h` beyond `ω`       | Toy params                              | Forge a message without the private key      |
 | `toy_params_too_small` | Shrink `τ`, `λ`, `k`, `l`, or `n`   | Toy params                              | Exhaustive search or linear algebra attack   |
 

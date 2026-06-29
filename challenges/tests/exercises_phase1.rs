@@ -5,7 +5,7 @@ use dilithium_poc::params::ML_DSA_44;
 use dilithium_poc_challenges::exercises::phase1::{
     estimate_mask_bias_means, estimate_secret_from_biased_masks,
     forge_signature_without_ctilde_binding, recover_secret_from_reused_mask,
-    recover_toy_secret_by_search, strict_z_bound_accepts,
+    recover_toy_secret_by_search,
 };
 
 #[test]
@@ -35,13 +35,6 @@ fn verifier_no_ctilde_exercise_forges_chosen_message_signature() {
     let signature = forge_signature_without_ctilde_binding(key_pair.public_key(), message, context);
 
     assert!(!key_pair.public_key().verify(message, &signature, context));
-}
-
-#[test]
-fn verifier_no_z_bound_exercise_rejects_oversized_z() {
-    assert!(strict_z_bound_accepts(7, 8));
-    assert!(!strict_z_bound_accepts(8, 8));
-    assert!(!strict_z_bound_accepts(42, 8));
 }
 
 #[test]
