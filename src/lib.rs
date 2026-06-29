@@ -1,4 +1,4 @@
-//! POC de ML-DSA segun FIPS 204 y RFC 9881.
+//! POC de ML-DSA segun FIPS 204, RFC 9881 y RFC 9882.
 //!
 //! El crate todavia esta en fase de scaffold. La planificacion tecnica vive en
 //! `roadmap.md` y las notas normativas para colaboradores viven en `AGENTS.md`.

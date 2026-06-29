@@ -2,7 +2,7 @@
 
 @RTK.md
 
-Este repo es una POC de ML-DSA en Rust. La referencia normativa para el algoritmo es FIPS 204; la referencia normativa para PKIX/X.509 es RFC 9881.
+Este repo es una POC de ML-DSA en Rust. La referencia normativa para el algoritmo es FIPS 204; la referencia normativa para PKIX/X.509 es RFC 9881; la referencia normativa para CMS es RFC 9882.
 
 ## Contexto operativo
 
@@ -18,20 +18,23 @@ Este repo es una POC de ML-DSA en Rust. La referencia normativa para el algoritm
   - `pdftotext docs/NIST.FIPS.204.pdf /tmp/fips204.txt`
   - `rg -n "ML-DSA-44|Algorithm 7|Table 1" /tmp/fips204.txt`
 - RFC 9881 local: `docs/rfc9881.txt`.
-- `docs/CRYSTALS_Dilithium_Clean.md` es contexto tecnico util, pero no reemplaza FIPS 204 ni RFC 9881.
-- RFC 9882 esta en `docs/rfc9882.txt`, pero el alcance pedido es RFC 9881. Usarlo solo como referencia de CMS si una tarea lo pide.
+- RFC 9882 local: `docs/rfc9882.txt`.
+- `docs/CRYSTALS_Dilithium_Clean.md` es contexto tecnico util, pero no reemplaza FIPS 204, RFC 9881 ni RFC 9882.
 
 Fuentes oficiales verificadas:
 
 - FIPS 204: https://doi.org/10.6028/NIST.FIPS.204
 - RFC 9881: https://datatracker.ietf.org/doc/rfc9881/
+- RFC 9882: https://datatracker.ietf.org/doc/rfc9882/
 
 ## Frontera normativa
 
 - FIPS 204 define ML-DSA: KeyGen, Sign, Verify, parametros, codificacion cruda de claves/firmas, sampling, SHAKE, NTT, rejection loop.
 - RFC 9881 define como usar ML-DSA en PKIX/X.509: OIDs, AlgorithmIdentifier, SubjectPublicKeyInfo, keyUsage y formatos ASN.1 de private key.
+- RFC 9882 define como usar ML-DSA pure mode en CMS `SignedData`: OIDs, `SignerInfo`, `signedAttrs`, digest algorithms y que bytes exactos se firman.
 - ML-DSA deriva de CRYSTALS-Dilithium, pero ML-DSA y Dilithium historico no son compatibles byte a byte. No usar vectores Dilithium como prueba de conformidad ML-DSA salvo que esten explicitamente adaptados.
 - Para PKIX, RFC 9881 especifica pure ML-DSA. HashML-DSA de FIPS 204 no debe usarse en certificados X.509 para CRL, OCSP, certificate issuance ni protocolos PKIX relacionados.
+- Para CMS, RFC 9882 tambien especifica ML-DSA pure mode con contexto FIPS `ctx = ""`. HashML-DSA no esta especificado por RFC 9882.
 
 ## Parametros FIPS 204
 
@@ -181,6 +184,19 @@ Private key RFC 9881:
 - Si se recibe `both`, deberia ejecutarse consistency check: regenerar expanded key desde seed con `ML-DSA.KeyGen_internal(seed)` y comparar byte a byte. Si no coincide y se hizo el check, rechazar como malformed.
 - Si se descarto el seed y solo queda expandedKey, no se puede reconstruir el seed.
 
+## RFC 9882 / CMS
+
+Reglas obligatorias:
+
+- CMS usa los mismos OIDs `id-ml-dsa-44`, `id-ml-dsa-65` e `id-ml-dsa-87`, con `AlgorithmIdentifier.parameters` ausente.
+- ML-DSA en CMS usa pure mode y el contexto FIPS queda en `ctx = ""`.
+- HashML-DSA no esta especificado para CMS en este repo.
+- Con `signedAttrs` ausentes, ML-DSA firma los octetos de `eContent`; el `digestAlgorithm` se emite como SHA-512 y se ignora al verificar.
+- Con `signedAttrs` presentes, ML-DSA firma el DER completo de `SignedAttrs` como `SET OF`, no la codificacion implicita `[0]` que aparece dentro de `SignerInfo`.
+- `signedAttrs` debe incluir `content-type` y `message-digest`; el receptor debe recalcular el digest sobre los octetos de `eContent`.
+- SHA-512 debe estar soportado para CMS y es apto para ML-DSA-44/65/87. SHAKE256 deberia soportarse cuando se use como digest CMS.
+- Incluir `CMSAlgorithmProtection` por defecto en `signedAttrs` generados para reducir riesgo de sustitucion de algoritmo.
+
 ## Benchmarks y experimentos
 
 Benchmarks minimos:
@@ -209,7 +225,7 @@ Los experimentos con parametros alterados deben vivir bajo `experimental-params`
 - `getrandom` es la unica fuente de entropia del sistema operativo usada por las APIs externas `ML-DSA.KeyGen()` y hedged `ML-DSA.Sign()`. El helper interno esta en `src/ml_dsa/random.rs`.
 - No usar `rand_core::OsRng`: la migracion intencional es pedir bytes del OS directamente con `getrandom::fill`.
 - `criterion` es solo dev para benchmarks.
-- Bajo feature `pkix`: `der`, `spki` y `pkcs8` estan en la familia RustCrypto/formats actual (`der 0.8`, `spki 0.8`, `pkcs8 0.11`). `AlgorithmIdentifier.parameters` debe seguir ausente, nunca `NULL`.
+- Bajo feature `pkix`: `der`, `spki`, `pkcs8` y `sha2` estan en la familia RustCrypto/formats actual (`der 0.8`, `spki 0.8`, `pkcs8 0.11`, `sha2 0.11`). `AlgorithmIdentifier.parameters` debe seguir ausente, nunca `NULL`.
 - `zeroize`, `subtle`, `x509-cert`, `const-oid` o `pem-rfc7468` pueden considerarse si una tarea futura los necesita, pero no agregarlos sin una razon concreta.
 
 No usar un crate ML-DSA completo como implementacion principal. Puede usarse solo como oracle de tests diferenciales, si se documenta.
@@ -218,6 +234,7 @@ No usar un crate ML-DSA completo como implementacion principal. Puede usarse sol
 
 - Cambios en SHAKE/XOF, sampling, encoding, signing, verification o dependencias criptograficas deben correr ACVP: `rtk cargo test acvp --all-features`.
 - Cambios en PKIX/RFC 9881 deben correr: `rtk cargo test --features pkix rfc9881_`.
+- Cambios en CMS/RFC 9882 deben correr: `rtk cargo test --features pkix rfc9882_`.
 - Cierre estandar despues de tocar dependencias o rutas criptograficas:
   - `rtk cargo test --all-features`
   - `rtk cargo test`

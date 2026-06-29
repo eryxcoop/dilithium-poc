@@ -15,7 +15,9 @@ use crate::sampling::{ExpandASeed, expand_a, expand_mask, sample_in_ball};
 use crate::xof::shake256;
 
 use super::context::format_message;
-use super::sign::{ChallengeSeed, MessageRepresentative, SIGNING_RANDOMNESS_BYTES, SigningRandomness};
+use super::sign::{
+    ChallengeSeed, MessageRepresentative, SIGNING_RANDOMNESS_BYTES, SigningRandomness,
+};
 
 /// A real ML-DSA signing attempt whose only remaining failure is `hint weight > omega`.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -225,8 +227,16 @@ fn make_hints_without_omega(
 ) -> DilithiumResult<PolyVector> {
     use crate::validation::ensure_dimension;
 
-    ensure_dimension("hint source vector dimension", parameter_set.core.k, z.dimension())?;
-    ensure_dimension("hint target vector dimension", parameter_set.core.k, r.dimension())?;
+    ensure_dimension(
+        "hint source vector dimension",
+        parameter_set.core.k,
+        z.dimension(),
+    )?;
+    ensure_dimension(
+        "hint target vector dimension",
+        parameter_set.core.k,
+        r.dimension(),
+    )?;
 
     let polys = z
         .iter()
@@ -255,8 +265,16 @@ fn use_hints_without_omega(
 ) -> DilithiumResult<PolyVector> {
     use crate::validation::ensure_dimension;
 
-    ensure_dimension("hint vector dimension", parameter_set.core.k, hints.dimension())?;
-    ensure_dimension("hint target vector dimension", parameter_set.core.k, r.dimension())?;
+    ensure_dimension(
+        "hint vector dimension",
+        parameter_set.core.k,
+        hints.dimension(),
+    )?;
+    ensure_dimension(
+        "hint target vector dimension",
+        parameter_set.core.k,
+        r.dimension(),
+    )?;
     hints.binary_weight()?;
 
     let mut polys = Vec::with_capacity(hints.dimension());

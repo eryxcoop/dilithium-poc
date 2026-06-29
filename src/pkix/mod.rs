@@ -1,4 +1,4 @@
-//! RFC 9881 PKIX/X.509 wrappers for pure ML-DSA.
+//! RFC 9881 PKIX/X.509 and RFC 9882 CMS wrappers for pure ML-DSA.
 //!
 //! FIPS 204 defines the raw ML-DSA public key, expanded private key, and
 //! signature byte strings. RFC 9881 defines how those byte strings are carried
@@ -12,16 +12,27 @@
 //!   DER-encoded ML-DSA private-key CHOICE: seed `[0]`, expanded key
 //!   `OCTET STRING`, or `both` `SEQUENCE`.
 //!
+//! RFC 9882 reuses the same ML-DSA OIDs for CMS `SignedData`. The CMS helpers
+//! provided here are intentionally minimal: single-signer `SignedData` for pure
+//! ML-DSA with an empty FIPS context string.
+//!
 //! This module intentionally keeps these DER wrappers outside [`crate::ml_dsa`]
 //! so the algorithmic FIPS path remains separate from transport encoding.
 
 mod algorithm;
+mod cms;
 mod key_usage;
 mod oid;
 mod private_key;
 mod spki;
 
 pub use algorithm::{algorithm_identifier_der, decode_algorithm_identifier};
+pub use cms::{
+    CmsDigestAlgorithm, CmsSignedAttrs, ID_CMS_ALGORITHM_PROTECTION_ATTR, ID_CONTENT_TYPE_ATTR,
+    ID_DATA, ID_MESSAGE_DIGEST_ATTR, ID_SIGNED_DATA, MldsaCmsSignedDataOptions,
+    cms_digest_algorithm_der, cms_signature_algorithm_der, cms_signed_attrs_to_be_signed_der,
+    encode_mldsa_signed_data, verify_mldsa_signed_data,
+};
 pub use key_usage::{KeyUsage, validate_key_usage};
 pub use oid::{
     ID_ML_DSA_44, ID_ML_DSA_65, ID_ML_DSA_87, oid_for_parameter_set, parameter_set_for_oid,

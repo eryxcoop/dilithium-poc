@@ -2,13 +2,14 @@
 
 `dilithium-poc` is a Rust proof of concept for implementing, testing, and
 measuring ML-DSA according to [FIPS 204][fips-204], with optional PKIX/X.509
-transport helpers according to [RFC 9881][rfc-9881].
+transport helpers according to [RFC 9881][rfc-9881] and minimal CMS
+`SignedData` helpers according to [RFC 9882][rfc-9882].
 
 Author: Lorenzo Ruiz Diaz
 
 ## Security Notice
 
-This repository is not production cryptography. It is an auditable and
+This repository is **not** production cryptography. It is an auditable and
 measurable proof of concept, not a certified FIPS module and not a library that
 should be used to protect real data.
 
@@ -31,6 +32,9 @@ Implemented:
 - Optional RFC 9881 PKIX helpers for OIDs, `AlgorithmIdentifier`,
   `SubjectPublicKeyInfo`, `OneAsymmetricKey`, private-key CHOICEs, and
   `keyUsage`.
+- Optional RFC 9882 CMS helpers for pure ML-DSA single-signer `SignedData`,
+  including signed attributes, detached or encapsulated content, SHA-512 digest
+  support, and strict absent-parameter `AlgorithmIdentifier` handling.
 - NIST ACVP/CAVP conformance runners outside the ordinary `tests/` directory.
 - Criterion benchmarks for key generation, signing, verification, sampling,
   NTT, encoding/decoding, PKIX, rejection behavior, and parameter experiments.
@@ -43,6 +47,11 @@ Out of scope:
 - Production deployment.
 - HashML-DSA in PKIX/X.509. RFC 9881 targets pure ML-DSA for certificates,
   CRLs, OCSP, certificate issuance, and related PKIX protocols.
+- HashML-DSA in CMS. RFC 9882 specifies pure ML-DSA with an empty FIPS context
+  string.
+- General-purpose CMS/RFC 5652. The CMS code is intentionally a narrow RFC
+  9882 profile, not a full CMS stack with certificate path processing,
+  multi-signer discovery, CRLs, or arbitrary attribute semantics.
 - Treating historical CRYSTALS-Dilithium vectors as byte-for-byte ML-DSA
   conformance evidence unless they are explicitly adapted to FIPS 204.
 
@@ -54,7 +63,7 @@ Run the default unit tests:
 cargo test
 ```
 
-Run all features, including PKIX, instrumentation, and benchmark-only support:
+Run all features, including PKIX/CMS, instrumentation, and benchmark-only support:
 
 ```bash
 cargo test --all-features
@@ -70,6 +79,12 @@ Run RFC 9881-focused PKIX checks:
 
 ```bash
 cargo test --features pkix rfc9881_
+```
+
+Run RFC 9882-focused CMS checks:
+
+```bash
+cargo test --features pkix rfc9882_
 ```
 
 Run linting with all targets and features:
@@ -99,7 +114,7 @@ assert!(ok);
 
 The high-level pure ML-DSA API lives in `dilithium_poc::ml_dsa`.
 
-PKIX/RFC 9881 helpers are available with:
+PKIX/RFC 9881 and CMS/RFC 9882 helpers are available with:
 
 ```bash
 cargo test --features pkix
@@ -112,7 +127,7 @@ and live in `dilithium_poc::pkix`.
 | Feature               | Purpose                                                                                      |
 | --------------------- | -------------------------------------------------------------------------------------------- |
 | `std`                 | Default feature for ordinary host builds.                                                    |
-| `pkix`                | Enables RFC 9881 DER/PKIX helpers using `der`, `spki`, and `pkcs8`.                          |
+| `pkix`                | Enables RFC 9881 PKIX and RFC 9882 CMS helpers using `der`, `spki`, `pkcs8`, and `sha2`.      |
 | `instrumentation`     | Exposes aggregate signing/sampling reports and deterministic test signing helpers.           |
 | `experimental-params` | Enables non-standard parameter metadata for controlled experiments.                          |
 | `m7-benchmarks`       | Enables benchmark-only paths; includes `experimental-params`, `instrumentation`, and `pkix`. |
@@ -129,7 +144,7 @@ src/
   encoding/      Raw FIPS 204 key, signature, hint, bit, and polynomial encoders.
   poly/          Polynomial, vector, matrix, and NTT-domain types.
   params/        FIPS 204 constants and parameter-set metadata.
-  pkix/          RFC 9881 helpers behind the pkix feature.
+  pkix/          RFC 9881 PKIX and RFC 9882 CMS helpers behind the pkix feature.
 
 conformance/     NIST ACVP/CAVP and RFC 9881 conformance runners.
 benches/         Criterion benchmarks and benchmark reports.
@@ -152,12 +167,14 @@ Current coverage:
 | `ML-DSA-sigGen-FIPS204` | Pure external deterministic and randomized signing.                                     |
 | `ML-DSA-sigVer-FIPS204` | Pure external verification, including negative cases.                                   |
 | RFC 9881 PKIX           | OIDs, absent parameters, SPKI, private-key CHOICEs, `OneAsymmetricKey`, and `keyUsage`. |
+| RFC 9882 CMS            | Minimal pure ML-DSA `SignedData`, signed attributes, detached content, and digest policy. |
 
 Run:
 
 ```bash
 cargo test acvp --all-features
 cargo test --features pkix rfc9881_
+cargo test --features pkix rfc9882_
 ```
 
 See `conformance/README.md` for fixture provenance and executed coverage.
@@ -208,6 +225,7 @@ should explain:
 - the exploit intuition,
 - whether it uses toy params or real ML-DSA params,
 - what FIPS 204 or RFC 9881 rule prevents the bug,
+- whether a transport-layer bug relates to RFC 9881 or RFC 9882,
 - how the strict implementation rejects or avoids the failure.
 
 Start with:
@@ -220,14 +238,20 @@ Start with:
 
 - `docs/NIST.FIPS.204.pdf`: local copy of FIPS 204.
 - `docs/rfc9881.txt`: local copy of RFC 9881.
-- `docs/rfc9882.txt`: CMS-related reference; not the main PKIX target.
+- `docs/rfc9882.txt`: local copy of RFC 9882.
 - `docs/CRYSTALS_Dilithium_Clean.md`: useful historical context, not normative.
 - `docs/ml-dsa-failure-examples-research.md`: research notes for educational
   failure challenges.
 - `roadmap.md`: milestone plan and implementation history.
-- `AGENTS.md`: contributor and agent guidance with normative ML-DSA/PKIX notes.
+- `AGENTS.md`: contributor and agent guidance with normative ML-DSA, PKIX, and
+  CMS notes.
 
 Official references:
 
 - [FIPS 204: Module-Lattice-Based Digital Signature Standard][fips-204]
 - [RFC 9881: Use of ML-DSA in PKIX][rfc-9881]
+- [RFC 9882: Use of ML-DSA in CMS][rfc-9882]
+
+[fips-204]: https://doi.org/10.6028/NIST.FIPS.204
+[rfc-9881]: https://datatracker.ietf.org/doc/rfc9881/
+[rfc-9882]: https://datatracker.ietf.org/doc/rfc9882/

@@ -11,6 +11,12 @@ use crate::params::{
     CoreParams, D, EncodedSizes, ML_DSA_44, ML_DSA_65, ML_DSA_87, N, PARAMETER_SETS, ParameterSet,
     ParameterSetId, Q, ZETA,
 };
+#[cfg(feature = "pkix")]
+use crate::pkix::{
+    CmsDigestAlgorithm, CmsSignedAttrs, MldsaCmsSignedDataOptions, cms_digest_algorithm_der,
+    cms_signature_algorithm_der, cms_signed_attrs_to_be_signed_der, decode_algorithm_identifier,
+    encode_mldsa_signed_data, verify_mldsa_signed_data,
+};
 use crate::poly::{NttPoly, NttPolyVector, Poly, PolyMatrix, PolyVector};
 use crate::sampling::{
     AlgorithmSamplingLimits, ExpandASeed, ExpandMaskSeed, ExpandSSeed,
@@ -27,6 +33,8 @@ mod encoding;
 mod ml_dsa;
 mod ntt;
 mod params;
+#[cfg(feature = "pkix")]
+mod pkix;
 mod rounding;
 mod sampling;
 

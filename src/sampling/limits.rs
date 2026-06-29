@@ -82,7 +82,7 @@ impl AlgorithmSamplingLimits {
 /// This groups the algorithms from milestone M3 that have Table 3 limits:
 /// `RejBoundedPoly`, `RejNTTPoly`, and `SampleInBall`. `ML-DSA.Sign_internal`
 /// also has a Table 3 loop minimum, but the signing loop is implemented in a
-/// later milestone, so only its constant lives in [`crate::sampling::constants`].
+/// later milestone, so only its constant lives in `crate::sampling::constants`.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct SamplingLimits {
     /// Limits for `RejBoundedPoly`.
