@@ -11,6 +11,21 @@ while the demos live under `challenges/src/failures/`. A challenge
 should get its own directory only when it has fixtures, expected-output
 snapshots, custom runners, or result artifacts.
 
+This catalog is closed. The classroom set is exactly:
+
+1. `nonce_reuse`
+2. `sampler_patterned_y`
+3. `eta_unbounded_secret`
+4. `gamma1_beta_boundary_oracle`
+5. `gamma2_lowbits_boundary_oracle`
+6. `verifier_no_ctilde`
+7. `lambda_too_short_cross_message`
+8. `toy_dense_hint_forgery`
+9. `toy_params_too_small`
+
+Do not treat other sketches, historical roadmap entries, or research notes as
+active challenge work unless the catalog is deliberately reopened.
+
 Student-facing stubs live under `challenges/src/exercises/` and are
 gated by the `exercises` feature:
 

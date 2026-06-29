@@ -1,4 +1,10 @@
-# Challenge Title
+# Archived Challenge Note Template
+
+The classroom catalog is closed. This template is retained only for maintaining
+or splitting an existing catalog challenge into a larger note. Do not use it to
+add a new challenge unless the catalog is deliberately reopened.
+
+# Existing Challenge Title
 
 ## Objective
 
@@ -23,4 +29,3 @@ Describe the transcript line or recovered value that means the challenge worked.
 ## FIPS Defense
 
 Explain why the conformant implementation avoids or rejects the failure.
-

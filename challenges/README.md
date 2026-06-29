@@ -44,10 +44,31 @@ The challenge lab uses four guardrails:
 - Runners should emit a classroom transcript and have deterministic tests. The
   shared format lives under `challenges/src/shared/`.
 - Intentionally vulnerable runners must be gated by the `failure-challenges`
-  feature. Normal workspace builds compile the harmless harness, not the future
-  vulnerable demos.
+  feature. Normal workspace builds compile the harmless harness, not vulnerable
+  demos.
 - Student exercise stubs are gated by the separate `exercises` feature. Those
   tests are expected to fail until a student completes the missing functions.
+
+## Closed Catalog
+
+The active challenge set is closed. This is the complete classroom catalog:
+
+| Challenge | Lesson |
+| --- | --- |
+| `nonce_reuse` | Reusing `y` / `ρ″,κ` cancels the mask and recovers a toy `s₁`. |
+| `sampler_patterned_y` | A position-biased mask sampler leaks `s₁` statistically. |
+| `eta_unbounded_secret` | Secrets outside `[-η, η]` become visible through averaged responses. |
+| `gamma1_beta_boundary_oracle` | Accepting the forbidden `γ₁ - β ≤ |z_j| < γ₁` band leaks `s₁`. |
+| `gamma2_lowbits_boundary_oracle` | Accepting low-bit edge values near `γ₂` leaks `s₂`. |
+| `verifier_no_ctilde` | Skipping `c̃ == H(μ || w1Encode(w₁′))` enables forgery. |
+| `lambda_too_short_cross_message` | Checking only 24 bits of `c̃` enables cross-message forgery. |
+| `toy_dense_hint_forgery` | Accepting hint weight beyond `ω` enables toy signature forgery. |
+| `toy_params_too_small` | Tiny toy parameters make exhaustive recovery visible. |
+
+This list is the source of truth for `challenges/src/failures/`,
+`challenges/src/exercises/`, `challenges/tests/`, and [`classroom.md`](classroom.md).
+Do not add new challenge families from old notes or brainstorming unless the
+catalog is deliberately reopened and all catalog surfaces are updated together.
 
 ## Challenge Shape
 
@@ -97,52 +118,12 @@ cargo test -p dilithium-poc-challenges --features exercises --test exercises_fai
 
 Those tests intentionally hit `todo!()` in a fresh checkout.
 
-## First Track
-
-The first implementation track should prioritize the strongest classroom demos:
-
-1. `nonce_reuse`: force the same `y` / `ρ″,κ` in two signatures and recover
-   `s1` or a signing-equivalent secret in a controlled setting.
-2. `sampler_patterned_y`: sample `y` with a position-dependent mean bias and
-   show how many signatures can leak `s1` statistically.
-3. `eta_unbounded_secret`: let `s1` escape the `|η|` bound and recover it from
-   averages of `z = y + c·s1`.
-4. `verifier_no_ctilde`: remove `c̃ == H(μ || w1Encode(w1′))` and demonstrate
-   a trivial forgery.
-5. `lambda_too_short_cross_message`: truncate `c̃` to 24 checked bits and turn
-   a cross-message collision into a forgery of an unsigned message.
-6. `toy_dense_hint_forgery`: in toy params, use overweight hints to forge a
-   message without the private key while replay to another message still fails.
-7. `toy_params_too_small`: reduce `τ`, `λ`, `k`, `l`, or `n` until exhaustive
-   search or linear algebra becomes visible.
-
 The current classroom demos are implemented as deterministic transcript runners
 under `challenges/src/failures/`. They are intentionally small and
 classroom-oriented: some use toy algebra, while verifier failures use
 strict-vs-vulnerable structural comparisons. The teaching notes live in
 [`classroom.md`](classroom.md). Student-facing stubs live under
 `challenges/src/exercises/` and are enabled only with the `exercises` feature.
-
-## Extended Track
-
-After the first track, add examples that are subtler but closer to real
-implementation mistakes:
-
-- `lambda_too_short`: truncate `c̃` and find collisions or preimages in a toy
-  setting.
-- `tau_zero_forgery`: set `τ = 0` and forge because `SampleInBall(c̃)` always
-  gives `c = 0`.
-- `eta_too_small`: use `η = 0` or `η = 1` and recover secrets by enumeration in
-  toy params.
-- `expand_a_repeated_columns`: derive `Â` with missing row/column binding and
-  exploit repeated structure.
-- `gamma1_edge_leak`: use a too-small `γ₁` or wrong `β` and measure boundary
-  bias in `z = y + c s1`.
-- `trailing_bytes`: accept `sig || garbage` in a permissive parser and compare
-  against strict FIPS decoding.
-- `ctx_replay`: omit `ctx` from `M′` and replay a signature across domains.
-- `pkix_null_parameters`: accept DER `NULL` in `AlgorithmIdentifier.parameters`
-  and contrast it with RFC 9881's absent-parameters rule.
 
 ## References
 

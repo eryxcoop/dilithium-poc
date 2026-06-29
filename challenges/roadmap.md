@@ -1,191 +1,76 @@
-# Challenges Roadmap
+# Challenges Catalog
 
-This roadmap turns the failure-analysis document into implementable classroom
-exercises. The order is intentional: start with high-signal failures, then add
-parameter experiments, parser/protocol bugs, and finally advanced statistical or
-algebraic demos.
+This document is no longer a backlog. It records the closed classroom challenge
+set for `dilithium-poc-challenges`.
 
-## Status Legend
+The catalog is complete as-is. Historical brainstorming notes, research notes,
+and old roadmap ideas are not active work items. Do not add a new challenge
+unless the catalog is deliberately reopened and the following surfaces are
+updated together:
 
-- `planned`: design selected, not implemented.
-- `scaffolded`: directory and README exist.
-- `demo`: vulnerable path and exploit runner exist.
-- `verified`: demo has automated checks and expected output.
-- `teaching-ready`: README, exploit, FIPS comparison, and commands are polished.
+- `challenges/src/failures/`
+- `challenges/src/exercises/`
+- `challenges/tests/`
+- `challenges/classroom.md`
+- `challenges/README.md`
+- `AGENTS.md`
 
-## Foundations
+## Closed Set
 
-Status: `scaffolded`
+| Challenge | Broken rule | Teaching target |
+| --- | --- | --- |
+| `nonce_reuse` | Reuse the same `y` / `ρ″,κ` across signatures | Algebraic recovery of a toy `s₁` |
+| `sampler_patterned_y` | Use a position-biased mask sampler | Statistical recovery of `s₁` from biased masks |
+| `eta_unbounded_secret` | Let secret coefficients escape `[-η, η]` | Wide secrets leak through averaged `z` values |
+| `gamma1_beta_boundary_oracle` | Check `∥z∥∞ < γ₁` instead of `γ₁ - β` | Boundary-oracle recovery of `s₁` |
+| `gamma2_lowbits_boundary_oracle` | Check `∥r₀∥∞ < γ₂` instead of `γ₂ - β` | Low-bits boundary-oracle recovery of `s₂` |
+| `verifier_no_ctilde` | Skip `c̃ == H(μ || w1Encode(w₁′))` | Structural forgery when Fiat-Shamir binding is missing |
+| `lambda_too_short_cross_message` | Check only 24 bits of `c̃` | Cross-message forgery from short challenge output |
+| `toy_dense_hint_forgery` | Accept hint weight beyond `ω` | Toy forgery using overpowered hints |
+| `toy_params_too_small` | Shrink toy parameters until search is feasible | Exhaustive recovery in a tiny public equation |
 
-Build the shared structure that keeps vulnerable material from leaking into the
-conformant crate.
+## Ordering
 
-- Use `challenges/` as a separate Cargo workspace member.
-- Keep toy parameters in separate educational algebra types under
-  `challenges/src/toy/`.
-- Use transcript-first runners under `challenges/src/shared/`, with examples for
-  class output and tests for deterministic assertions.
-- Gate intentionally vulnerable runners behind `failure-challenges`.
-- Gate intentionally incomplete student exercises behind `exercises`.
-- Add a template README for each challenge.
-- Add CI-safe tests that assert vulnerable examples stay outside the FIPS path.
-- Document every intentional violation with the exact FIPS 204 or RFC 9881 rule.
+The classroom order is intentional:
 
-Exit criteria:
+1. `nonce_reuse`
+2. `sampler_patterned_y`
+3. `eta_unbounded_secret`
+4. `gamma1_beta_boundary_oracle`
+5. `gamma2_lowbits_boundary_oracle`
+6. `verifier_no_ctilde`
+7. `lambda_too_short_cross_message`
+8. `toy_dense_hint_forgery`
+9. `toy_params_too_small`
 
-- Done: a new challenge can be added without touching production signing or
-  verifying.
-- Done: running normal ACVP/conformance tests does not depend on challenge code.
-- Done: vulnerable demos require an explicit `failure-challenges` feature.
-- Done: student stubs require an explicit `exercises` feature.
-- Done: add `challenges/template.md` for challenges that grow beyond a
-  phase-level doc.
-- Pending: add the first real vulnerable demo.
+That order starts with direct algebra, moves through statistical leaks and
+boundary-oracle reasoning, then finishes with verifier/Fiat-Shamir failures and
+toy parameter collapse.
 
-## Current Catalog
+## Completion Criteria
 
-Status: `demo`
+For each catalog entry:
 
-These are the current classroom challenges. They are direct, memorable, and map
-cleanly to strong security failures.
+- The solved demo lives under `challenges/src/failures/`.
+- The student-facing stub lives under `challenges/src/exercises/`.
+- The challenge appears in `challenges/tests/failures.rs`.
+- The exercise appears in `challenges/tests/exercises_failures.rs`.
+- The teaching writeup lives in `challenges/classroom.md`.
+- Vulnerable runners require the explicit `failure-challenges` feature.
+- Student stubs require the explicit `exercises` feature.
 
-| Challenge | Bug | Demo target | Impact |
-| --- | --- | --- | --- |
-| `nonce_reuse` | Reuse the same `y` / `ρ″,κ` | Real or near-real controlled signatures | Recover `s1` or a signing-equivalent secret |
-| `sampler_patterned_y` | Position-biased mask sampler | Toy or reduced setting | Leak `s1` statistically while signatures verify |
-| `eta_unbounded_secret` | Skip the `|η|` bound on `s₁` | Toy or reduced setting | Leak `s1` directly from averages of `z` |
-| `verifier_no_ctilde` | Skip `c̃ == H(μ \|\| w1Encode(w1′))` | Toy or real structural signature | Trivial forgery |
-| `lambda_too_short_cross_message` | Truncate `c̃` below the `λ`-sized challenge length | Toy or reduced setting | Cross-message forgery of an unsigned message |
-| `toy_dense_hint_forgery` | Accept dense `h` beyond `ω` | Toy params | Forge a message without the private key |
-| `toy_params_too_small` | Shrink `τ`, `λ`, `k`, `l`, or `n` | Toy params | Exhaustive search or linear algebra attack |
+## Verification
 
-Exit criteria:
-
-- Done: each challenge has an exploit runner exposed by
-  `challenges/src/failures/` and the `classroom` example.
-- Done: each challenge has a matching student stub under
-  `challenges/src/exercises/` and a gated exercise test.
-- Done: verifier challenges compare vulnerable acceptance against strict FIPS
-  rejection conditions where applicable.
-- Done: [`classroom.md`](classroom.md) explains the role of `ρ″`, `κ`, `μ`, `c̃`,
-  `Â`, `∞`, `τ`, `λ`, `γ₁`, `β`, or `ω` as relevant.
-- Pending for `teaching-ready`: add expected full command output snapshots once
-  the classroom transcript wording stabilizes.
-
-## Parameter Experiments
-
-Status: `planned`
-
-These examples teach why the constants are coupled. They can be smaller and more
-experimental than the current classroom catalog, but should still produce a
-concrete observable failure.
-
-| Challenge                   | Parameter focus    | Demo idea                                                                                                                         |
-| --------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| `tau_zero_forgery`          | `τ`                | Set `τ = 0`, make `c = 0`, forge by choosing short `z`                                                                            |
-| `lambda_too_short`          | `λ`                | Explore even shorter or differently truncated challenge seeds beyond the current 24-bit cross-message demo |
-| `eta_too_small`             | `η`                | Use `η = 0/1` and recover secrets by enumeration                                                                                  |
-| `gamma1_edge_leak`          | `γ₁`, `β`          | Collect signatures and measure boundary bias in `z`                                                                               |
-| `gamma2_hint_pressure`      | `γ₂`, `ω`          | Show excessive carries or overpowered hints                                                                                       |
-| `small_ring_linear_algebra` | `n`, `k`, `l`, `q` | Recover toy secrets with linear algebra                                                                                           |
-
-Exit criteria:
-
-- Every experiment states clearly whether it is toy-only or meaningful for real
-  parameter sets.
-- Parameter changes are not exposed through normal public APIs.
-- Results are reproducible with deterministic seeds.
-
-## Parsing, Encoding, and Protocol Boundaries
-
-Status: `planned`
-
-These are less algebraic but very realistic implementation pitfalls.
-
-| Challenge                       | Broken rule                    | Demo idea                                                   |
-| ------------------------------- | ------------------------------ | ----------------------------------------------------------- |
-| `trailing_bytes`                | Accept exact-size violations   | Accept `sig \|\| garbage` in vulnerable parser              |
-| `ctx_replay`                    | Omit `ctx` from `M′`           | Replay one signature across `"login"` and `"firmware"`      |
-| `hint_malleability`             | Accept non-canonical hints     | Accept duplicate, unsorted, or over-`ω` hints               |
-| `pkix_null_parameters`          | Accept DER `NULL` parameters   | Contrast vulnerable PKIX parser with RFC 9881 strict parser |
-| `spki_wrong_bitstring`          | Accept non-octet-aligned SPKI  | Show malformed public key wrapper acceptance                |
-| `private_key_both_inconsistent` | Skip seed/expanded consistency | Accept mismatched RFC 9881 `both` private key               |
-
-Exit criteria:
-
-- Vulnerable parser behavior is isolated from `src/encoding` and `src/pkix`.
-- Each demo has a strict-vs-vulnerable comparison.
-- PKIX examples cite RFC 9881 and use absent `parameters` as the conformant
-  baseline.
-
-## Advanced Structure and Statistical Demos
-
-Status: `planned`
-
-These are better for a second class or workshop because they need more math,
-more samples, or more explanation.
-
-| Challenge                       | Focus          | Demo idea                                                       |
-| ------------------------------- | -------------- | --------------------------------------------------------------- |
-| `expand_a_repeated_columns`     | `ρ`, `Â`       | Drop row/column index binding and exploit repeated columns      |
-| `rho_prime_reuse`               | `ρ′`           | Reuse secret expansion across keys and compare public equations |
-| `wrong_zeta_rank_loss`          | `ζ`            | Use a degenerate NTT root in toy params and observe collisions  |
-| `small_or_composite_q`          | `q`            | Make ring arithmetic enumerable or non-field-like               |
-| `d_too_large_no_ct0_check`      | `d`, `γ₂`      | Over-compress `t1` and skip `\|\|c t0\|\|∞ < γ₂`                |
-| `biased_rejection_distribution` | `γ₁`, `β`, `η` | Use accepted/rejected edge statistics to leak secret signs      |
-
-Exit criteria:
-
-- Each advanced demo includes a short derivation or notebook-style explanation.
-- Long-running statistical demos record sample count and expected runtime.
-- The README warns when a demo is intuition-only for toy params.
-
-## Documentation Tasks
-
-Status: `planned`
-
-- Add `challenges/template.md` once the first challenge shape is settled.
-- Add a top-level map from each challenge to the corresponding section in
-  `docs/ml-dsa-failure-examples-research.md`.
-- Add a "how to teach this" note per challenge: 5-minute version, 20-minute
-  version, and optional homework.
-- Add expected command outputs for completed demos.
-- Add a glossary for `ρ`, `ρ′`, `ρ″`, `μ`, `c̃`, `Â`, `∞`, `η`, `τ`, `λ`,
-  `γ₁`, `γ₂`, `β`, `ω`, `κ`.
-
-## Verification Tasks
-
-Status: `planned`
-
-For every implemented challenge:
-
-- The vulnerable runner must fail closed if prerequisites are missing.
-- The exploit must be deterministic under fixed seeds.
-- The conformant implementation must still pass:
+The closed catalog is considered healthy when these pass:
 
 ```bash
-cargo test acvp --all-features
-cargo test --all-features
-cargo clippy --all-targets --all-features -- -D warnings
+cargo test -p dilithium-poc-challenges
+cargo test -p dilithium-poc-challenges --features failure-challenges
+cargo test -p dilithium-poc-challenges --features exercises --test exercises_failures --no-run
+cargo clippy -p dilithium-poc-challenges --all-targets --all-features -- -D warnings
+cargo doc -p dilithium-poc-challenges --features exercises --no-deps
 ```
 
-- If a challenge uses benchmarks or many samples, record the profile and results
-  under `challenges/<challenge-name>/results.md`.
-
-## Resolved Design Decisions
-
-- `challenges/` is a separate Cargo workspace member named
-  `dilithium-poc-challenges`.
-- Toy algebra is separate from production `Poly`/`PolyVector` and lives under
-  `challenges/src/toy/`.
-- Runners should produce classroom-friendly transcripts and deterministic tests.
-  The shared transcript format lives under `challenges/src/shared/`.
-- Intentionally vulnerable runners require the explicit feature
-  `failure-challenges`.
-
-## Open Design Decisions
-
-- Whether future toy algebra needs matrices and linear solvers in this crate, or
-  whether individual challenges should implement only the algebra they need.
-- Whether challenge runners should eventually share one CLI dispatcher or remain
-  as separate `cargo run --example ...` entry points.
+The full `exercises_failures` test target is expected to fail in a fresh
+checkout because exercise functions intentionally contain `todo!()` for
+students.

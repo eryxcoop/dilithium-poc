@@ -228,6 +228,10 @@ No usar un crate ML-DSA completo como implementacion principal. Puede usarse sol
 
 - Preferir Rust seguro; evitar `unsafe`.
 - Agregar rustdocs a cada estructura, enum, constante publica, campo publico y funcion publica que se introduzca.
+- Catalogo cerrado de challenges:
+  - El conjunto activo es exactamente: `nonce_reuse`, `sampler_patterned_y`, `eta_unbounded_secret`, `gamma1_beta_boundary_oracle`, `gamma2_lowbits_boundary_oracle`, `verifier_no_ctilde`, `lambda_too_short_cross_message`, `toy_dense_hint_forgery`, `toy_params_too_small`.
+  - No tratar notas historicas, research notes ni viejos roadmaps como backlog activo de nuevos challenges.
+  - No agregar nuevos challenges salvo pedido explicito de reabrir el catalogo; si se reabre, actualizar juntos `challenges/src/failures/`, `challenges/src/exercises/`, `challenges/tests/`, `challenges/classroom.md`, `challenges/README.md`, `challenges/roadmap.md` y esta seccion.
 - Titulos de challenges en rustdocs:
   - Usar un titulo humano y corto en Title Case como primer encabezado del modulo: `//! # Short λ, Wrong Message`.
   - Evitar nombres internos con snake_case en el titulo; reservarlos para IDs, nombres de archivo, tests y metadatos.
