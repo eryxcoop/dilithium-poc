@@ -181,6 +181,56 @@ message and even accepts the same signature for a different message. The real
 ML-DSA recomputes `c̃′ = H(μ || w1Encode(w₁′), λ/4)` and accepts only if
 `c̃′ == c̃`.
 
+## lambda_too_short_cross_message
+
+### Objective
+
+Forge a toy signature for an unsigned target message by colliding only the
+first 24 bits of `c̃` with a legitimately signed transcript for another
+message.
+
+### Bug
+
+The vulnerable verifier truncates `c̃` below the `λ`-sized challenge length and
+checks only the first 24 bits.
+
+### Setup
+
+Toy params with a public polynomial `a`, a hidden secret `s`, and
+`t = a·s mod (x^n + 1)`. The signer legitimately signs one message `M_A` by
+sampling bounded masks `y`, while the attacker searches bounded responses `z`
+for a different message `M_B`. Both sides hash
+
+```text
+c̃_full = H_full(μ || w₁)
+```
+
+but the broken verifier compares only `prefix24(c̃_full)`.
+
+### Hint
+
+Look for a pair of transcripts with
+
+```text
+prefix24(H_full(μ_A || w₁^(A))) = prefix24(H_full(μ_B || w₁^(B)))
+```
+
+while the full 32-bit values still differ. Reuse the signed message's full
+`c̃` on the unsigned message. The vulnerable verifier derives the same scalar
+challenge from that reused seed and accepts because only the first 24 bits are
+checked.
+
+### Expected Result
+
+The transcript shows a strict-valid signature on `M_A`, then a forged
+signature for unsigned `M_B` that the truncated verifier accepts and the strict
+verifier rejects.
+
+### FIPS Defense
+
+`λ` is the entropy budget for Fiat-Shamir. Truncating `c̃` makes cross-message
+collisions searchable and can turn transcript collisions into forgeries.
+
 ## toy_dense_hint_forgery
 
 ### Objective

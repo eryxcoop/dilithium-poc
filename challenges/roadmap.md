@@ -55,6 +55,7 @@ cleanly to strong security failures.
 | `sampler_patterned_y` | Position-biased mask sampler | Toy or reduced setting | Leak `s1` statistically while signatures verify |
 | `eta_unbounded_secret` | Skip the `|η|` bound on `s₁` | Toy or reduced setting | Leak `s1` directly from averages of `z` |
 | `verifier_no_ctilde` | Skip `c̃ == H(μ \|\| w1Encode(w1′))` | Toy or real structural signature | Trivial forgery |
+| `lambda_too_short_cross_message` | Truncate `c̃` below the `λ`-sized challenge length | Toy or reduced setting | Cross-message forgery of an unsigned message |
 | `toy_dense_hint_forgery` | Accept dense `h` beyond `ω` | Toy params | Forge a message without the private key |
 | `toy_params_too_small` | Shrink `τ`, `λ`, `k`, `l`, or `n` | Toy params | Exhaustive search or linear algebra attack |
 
@@ -79,14 +80,14 @@ These examples teach why the constants are coupled. They can be smaller and more
 experimental than the current classroom catalog, but should still produce a
 concrete observable failure.
 
-| Challenge                   | Parameter focus    | Demo idea                                              |
-| --------------------------- | ------------------ | ------------------------------------------------------ |
-| `tau_zero_forgery`          | `τ`                | Set `τ = 0`, make `c = 0`, forge by choosing short `z` |
-| `lambda_too_short`          | `λ`                | Truncate `c̃`, brute-force bounded transcripts, and use a collision in the short challenge seed to forge or malleate in toy params |
-| `eta_too_small`             | `η`                | Use `η = 0/1` and recover secrets by enumeration       |
-| `gamma1_edge_leak`          | `γ₁`, `β`          | Collect signatures and measure boundary bias in `z`    |
-| `gamma2_hint_pressure`      | `γ₂`, `ω`          | Show excessive carries or overpowered hints            |
-| `small_ring_linear_algebra` | `n`, `k`, `l`, `q` | Recover toy secrets with linear algebra                |
+| Challenge                   | Parameter focus    | Demo idea                                                                                                                         |
+| --------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| `tau_zero_forgery`          | `τ`                | Set `τ = 0`, make `c = 0`, forge by choosing short `z`                                                                            |
+| `lambda_too_short`          | `λ`                | Explore even shorter or differently truncated challenge seeds beyond the current 24-bit cross-message demo |
+| `eta_too_small`             | `η`                | Use `η = 0/1` and recover secrets by enumeration                                                                                  |
+| `gamma1_edge_leak`          | `γ₁`, `β`          | Collect signatures and measure boundary bias in `z`                                                                               |
+| `gamma2_hint_pressure`      | `γ₂`, `ω`          | Show excessive carries or overpowered hints                                                                                       |
+| `small_ring_linear_algebra` | `n`, `k`, `l`, `q` | Recover toy secrets with linear algebra                                                                                           |
 
 Exit criteria:
 
@@ -94,28 +95,6 @@ Exit criteria:
   parameter sets.
 - Parameter changes are not exposed through normal public APIs.
 - Results are reproducible with deterministic seeds.
-
-### Proposed `λ` Challenge
-
-Recommended next challenge: `lambda_too_short`.
-
-- Bug:
-  The vulnerable verifier/signature format truncates `c̃` below `λ/4` bytes.
-- Setup:
-  Use toy params with a real-looking verifier shape, bounded `z`, and either
-  zero hints or sparse valid hints.
-- Handle:
-  Search over many bounded candidate transcripts until two distinct
-  `w₁′` encodings land on the same short `c̃`. Because the verifier samples `c`
-  from the truncated seed, the attacker can replay one colliding seed against a
-  different transcript or target message in a way that becomes practical only
-  because `λ` is too short.
-- Expected result:
-  The vulnerable path accepts a forgery or malleated signature in toy params,
-  while the strict path using the full challenge length rejects it.
-- Teaching point:
-  `λ` is not cosmetic output length; it is the entropy budget that keeps
-  Fiat-Shamir challenge collisions out of reach.
 
 ## Parsing, Encoding, and Protocol Boundaries
 

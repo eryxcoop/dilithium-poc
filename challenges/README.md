@@ -109,9 +109,11 @@ The first implementation track should prioritize the strongest classroom demos:
    averages of `z = y + c·s1`.
 4. `verifier_no_ctilde`: remove `c̃ == H(μ || w1Encode(w1′))` and demonstrate
    a trivial forgery.
-5. `toy_dense_hint_forgery`: in toy params, use overweight hints to forge a
+5. `lambda_too_short_cross_message`: truncate `c̃` to 24 checked bits and turn
+   a cross-message collision into a forgery of an unsigned message.
+6. `toy_dense_hint_forgery`: in toy params, use overweight hints to forge a
    message without the private key while replay to another message still fails.
-6. `toy_params_too_small`: reduce `τ`, `λ`, `k`, `l`, or `n` until exhaustive
+7. `toy_params_too_small`: reduce `τ`, `λ`, `k`, `l`, or `n` until exhaustive
    search or linear algebra becomes visible.
 
 The current classroom demos are implemented as deterministic transcript runners

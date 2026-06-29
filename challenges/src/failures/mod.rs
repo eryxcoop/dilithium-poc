@@ -3,6 +3,7 @@
 //! These runners are compiled only with the `failure-challenges` feature.
 
 mod eta_unbounded_secret;
+mod lambda_too_short_cross_message;
 mod nonce_reuse;
 mod sampler_patterned_y;
 mod toy_dense_hint_forgery;
@@ -12,6 +13,7 @@ mod verifier_no_ctilde;
 use crate::shared::ChallengeRun;
 
 pub use eta_unbounded_secret::run as eta_unbounded_secret;
+pub use lambda_too_short_cross_message::run as lambda_too_short_cross_message;
 pub use nonce_reuse::run as nonce_reuse;
 pub use sampler_patterned_y::run as sampler_patterned_y;
 pub use toy_dense_hint_forgery::run as toy_dense_hint_forgery;
@@ -25,6 +27,7 @@ pub fn challenge_runs() -> Vec<ChallengeRun> {
         sampler_patterned_y(),
         eta_unbounded_secret(),
         verifier_no_ctilde(),
+        lambda_too_short_cross_message(),
         toy_dense_hint_forgery(),
         toy_params_too_small(),
     ]

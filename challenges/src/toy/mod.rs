@@ -8,9 +8,14 @@
 mod hints;
 mod params;
 mod poly;
+mod signatures;
 mod vector;
 
-pub use hints::{bits_from_mask, first_hint_positions, hint_weight, use_hints};
+pub use hints::{bits_from_mask, decompose, first_hint_positions, hint_weight, use_hints};
 pub use params::{ToyAlgebraError, ToyParams};
 pub use poly::ToyPoly;
+pub use signatures::{
+    ToyChallengeSignature, ToyPublicKey, ToySigningKey, high_bits_vector, reconstruct_w_approx,
+    sample_ternary_challenge,
+};
 pub use vector::ToyVector;

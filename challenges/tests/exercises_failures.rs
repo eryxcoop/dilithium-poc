@@ -4,10 +4,11 @@ use dilithium_poc::ml_dsa::KeyPair;
 use dilithium_poc::params::ML_DSA_44;
 use dilithium_poc_challenges::exercises::{
     estimate_mask_bias_means, estimate_secret_from_biased_masks, estimate_secret_from_unbounded_eta,
-    forge_signature_with_dense_hints, forge_signature_without_ctilde_binding,
-    recover_secret_from_reused_mask, recover_toy_secret_by_search,
+    forge_cross_message_with_short_lambda, forge_signature_with_dense_hints,
+    forge_signature_without_ctilde_binding, recover_secret_from_reused_mask,
+    recover_toy_secret_by_search,
 };
-use dilithium_poc_challenges::toy::{ToyParams, ToyPoly, hint_weight, use_hints};
+use dilithium_poc_challenges::toy::{ToyParams, ToyPoly, decompose, hint_weight, use_hints};
 
 type WideSecretObservations = (Vec<i64>, Vec<i64>, Vec<usize>, Vec<i64>, Vec<usize>);
 
@@ -48,6 +49,22 @@ fn eta_unbounded_secret_exercise_recovers_wide_secret() {
         estimate_secret_from_unbounded_eta(&sums_pos, &counts_pos, &sums_neg, &counts_neg),
         secret
     );
+}
+
+#[test]
+fn lambda_too_short_cross_message_exercise_finds_cross_message_forgery() {
+    let signed_message = b"signed classroom note";
+    let forged_message = b"unsigned target note";
+    let context = b"classroom";
+    let (c_tilde_full, z) =
+        forge_cross_message_with_short_lambda(signed_message, forged_message, context);
+
+    assert!(toy_short_lambda_vulnerable_accepts(
+        forged_message,
+        context,
+        &c_tilde_full,
+        &z,
+    ));
 }
 
 #[test]
@@ -168,6 +185,48 @@ fn toy_dense_hint_vulnerable_accepts(
         && toy_dense_hint_ctilde(toy_dense_hint_mu(message, context), &w1_prime) == c_tilde
         && z.infinity_norm() < 3
         && hints.len() == 8
+}
+
+fn toy_short_lambda_vulnerable_accepts(
+    message: &[u8],
+    context: &[u8],
+    c_tilde_full: &[u8; 4],
+    z: &ToyPoly,
+) -> bool {
+    let params = ToyParams::new(8, 257).unwrap();
+    let a = ToyPoly::from_coeffs(params, [3, 1, 0, 2, 0, 1, 0, 4]).unwrap();
+    let secret = ToyPoly::from_coeffs(params, [1, -2, 2, 0, -1, 1, 0, 2]).unwrap();
+    let t = a.checked_mul(&secret).unwrap();
+    let challenge = match c_tilde_full[0] % 3 {
+        0 => -1,
+        1 => 0,
+        _ => 1,
+    };
+    let a_z = a.checked_mul(z).unwrap();
+    let c_t = t.scalar_mul(challenge);
+    let w_approx = a_z.checked_sub(&c_t).unwrap();
+    let w1 = w_approx
+        .coeffs()
+        .iter()
+        .map(|&coefficient| decompose(params, coefficient, 8).0)
+        .collect::<Vec<_>>();
+    let mut input = Vec::with_capacity(8 + w1.len());
+    input.extend_from_slice(&shake_mu(message, context));
+    input.extend_from_slice(&w1);
+    let digest = dilithium_poc::xof::shake256(&input, 4);
+
+    z.infinity_norm() <= 5 && digest[..3] == c_tilde_full[..3]
+}
+
+fn shake_mu(message: &[u8], context: &[u8]) -> [u8; 8] {
+    let mut input = Vec::with_capacity(context.len() + 1 + message.len());
+    input.extend_from_slice(context);
+    input.push(b':');
+    input.extend_from_slice(message);
+    let digest = dilithium_poc::xof::shake256(&input, 8);
+    let mut mu = [0u8; 8];
+    mu.copy_from_slice(&digest);
+    mu
 }
 
 fn toy_dense_hint_mu(message: &[u8], context: &[u8]) -> u8 {

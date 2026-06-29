@@ -2,7 +2,8 @@
 
 use dilithium_poc_challenges::failures::{
     challenge_runs, challenges_success, eta_unbounded_secret, nonce_reuse, sampler_patterned_y,
-    toy_dense_hint_forgery, toy_params_too_small, verifier_no_ctilde,
+    lambda_too_short_cross_message, toy_dense_hint_forgery, toy_params_too_small,
+    verifier_no_ctilde,
 };
 
 #[test]
@@ -17,6 +18,7 @@ fn challenge_runs_are_available_in_catalog_order() {
             "sampler_patterned_y",
             "eta_unbounded_secret",
             "verifier_no_ctilde",
+            "lambda_too_short_cross_message",
             "toy_dense_hint_forgery",
             "toy_params_too_small",
         ]
@@ -31,6 +33,7 @@ fn challenge_transcripts_explain_bug_and_defense() {
         sampler_patterned_y(),
         eta_unbounded_secret(),
         verifier_no_ctilde(),
+        lambda_too_short_cross_message(),
         toy_dense_hint_forgery(),
         toy_params_too_small(),
     ] {
