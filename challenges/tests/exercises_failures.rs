@@ -2,19 +2,20 @@
 
 use dilithium_poc::ml_dsa::KeyPair;
 use dilithium_poc::params::ML_DSA_44;
-use dilithium_poc_challenges::shared::{
-    SplitMix64, sample_ternary_seed, toy_message_representative, toy_u8_challenge_seed,
-    toy_u8_message_representative,
-};
 use dilithium_poc_challenges::exercises::{
-    estimate_mask_bias_means, estimate_secret_from_biased_masks, estimate_secret_from_unbounded_eta,
-    forge_cross_message_with_short_lambda, forge_signature_with_dense_hints,
-    forge_signature_without_ctilde_binding, recover_secret_from_reused_mask,
-    recover_toy_secret_by_search,
+    estimate_mask_bias_means, estimate_secret_from_biased_masks,
+    estimate_secret_from_unbounded_eta, forge_cross_message_with_short_lambda,
+    forge_signature_with_dense_hints, forge_signature_without_ctilde_binding,
+    recover_secret_from_boundary_oracle, recover_secret_from_reused_mask,
+    recover_toy_secret_by_search, BoundaryObservation,
+};
+use dilithium_poc_challenges::shared::{
+    sample_ternary_seed, toy_message_representative, toy_u8_challenge_seed,
+    toy_u8_message_representative, SplitMix64,
 };
 use dilithium_poc_challenges::toy::{
-    ToyParams, ToyPoly, decompose, dense_hint_signing_key, hint_weight, short_lambda_signing_key,
-    use_hints,
+    decompose, dense_hint_signing_key, hint_weight, short_lambda_signing_key, use_hints, ToyParams,
+    ToyPoly,
 };
 
 type WideSecretObservations = (Vec<i64>, Vec<i64>, Vec<usize>, Vec<i64>, Vec<usize>);
@@ -59,6 +60,17 @@ fn eta_unbounded_secret_exercise_recovers_wide_secret() {
 }
 
 #[test]
+fn gamma1_beta_boundary_oracle_exercise_recovers_secret_from_edge_signatures() {
+    let secret = vec![1, -2, 2, 0, -1, 1];
+    let observations = boundary_observations(&secret, 128);
+
+    assert_eq!(
+        recover_secret_from_boundary_oracle(&observations, 2),
+        secret
+    );
+}
+
+#[test]
 fn lambda_too_short_cross_message_exercise_finds_cross_message_forgery() {
     let signed_message = b"signed classroom note";
     let forged_message = b"unsigned target note";
@@ -80,7 +92,9 @@ fn toy_dense_hint_forgery_exercise_finds_overweight_hint_solution() {
     let context = b"classroom";
     let (c_tilde, z, hints) = forge_signature_with_dense_hints(message, context);
 
-    assert!(toy_dense_hint_vulnerable_accepts(message, context, c_tilde, &z, &hints));
+    assert!(toy_dense_hint_vulnerable_accepts(
+        message, context, c_tilde, &z, &hints
+    ));
     assert!(hint_weight(&hints) > 2);
 }
 
@@ -165,6 +179,70 @@ fn biased_mask_observations() -> (Vec<i64>, Vec<Vec<i64>>, Vec<i64>, Vec<usize>)
     }
 
     (secret, mask_samples, sums, counts)
+}
+
+fn boundary_observations(secret: &[i64], target_count: usize) -> Vec<BoundaryObservation> {
+    const TAU: usize = 3;
+    const GAMMA1: i64 = 16;
+    const BETA: i64 = 6;
+
+    let mut rng = SplitMix64::new(0x9a6d_01b0_7eda_f00d);
+    let mut observations = Vec::with_capacity(target_count);
+
+    while observations.len() < target_count {
+        let challenge = sparse_challenge(&mut rng, secret.len(), TAU);
+        let c_times_secret = cyclic_convolution(&challenge, secret);
+        let mut edge_z = vec![None; secret.len()];
+        let mut vulnerable_accepts = true;
+
+        for (index, &shift) in c_times_secret.iter().enumerate() {
+            let y = rng.range((2 * GAMMA1 - 1) as u64) as i64 - (GAMMA1 - 1);
+            let z = y + shift;
+            if z.abs() >= GAMMA1 {
+                vulnerable_accepts = false;
+                break;
+            }
+            if z.abs() >= GAMMA1 - BETA {
+                edge_z[index] = Some(z);
+            }
+        }
+
+        if vulnerable_accepts && edge_z.iter().any(Option::is_some) {
+            observations.push(BoundaryObservation { challenge, edge_z });
+        }
+    }
+
+    observations
+}
+
+fn sparse_challenge(rng: &mut SplitMix64, degree: usize, tau: usize) -> Vec<i64> {
+    let mut challenge = vec![0; degree];
+    let mut filled = 0;
+
+    while filled < tau {
+        let index = rng.range(degree as u64) as usize;
+        if challenge[index] != 0 {
+            continue;
+        }
+        challenge[index] = if rng.bit() == 1 { 1 } else { -1 };
+        filled += 1;
+    }
+
+    challenge
+}
+
+fn cyclic_convolution(left: &[i64], right: &[i64]) -> Vec<i64> {
+    let degree = right.len();
+    let mut product = vec![0; degree];
+
+    for output_index in 0..degree {
+        for input_index in 0..degree {
+            product[output_index] +=
+                left[input_index] * right[(output_index + degree - input_index) % degree];
+        }
+    }
+
+    product
 }
 
 fn toy_dense_hint_vulnerable_accepts(

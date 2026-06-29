@@ -5,9 +5,9 @@ use dilithium_poc::encoding::{pk_decode, sig_decode, sig_encode, w1_encode};
 use dilithium_poc::error::DilithiumResult;
 use dilithium_poc::hints::HintsVector;
 use dilithium_poc::ml_dsa::{KeyPair, PublicKey, Signature};
-use dilithium_poc::params::{D, ML_DSA_44, ParameterSet};
+use dilithium_poc::params::{ParameterSet, D, ML_DSA_44};
 use dilithium_poc::poly::{NttMatrix, NttPoly, NttPolyVector, Poly, PolyVector};
-use dilithium_poc::sampling::{ExpandASeed, expand_a, sample_in_ball};
+use dilithium_poc::sampling::{expand_a, sample_in_ball, ExpandASeed};
 use dilithium_poc::xof::shake256;
 
 use crate::shared::{ChallengeMetadata, ChallengeMode, ChallengeRun, Transcript};

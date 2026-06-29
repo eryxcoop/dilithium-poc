@@ -1,12 +1,12 @@
 //! `lambda_too_short_cross_message`: a 24-bit challenge enables cross-message forgery.
 
 use crate::shared::{
-    ChallengeMetadata, ChallengeMode, ChallengeRun, Transcript, random_bounded_polys,
-    short_prefix_24, toy_full_challenge_seed, toy_message_representative,
+    random_bounded_polys, short_prefix_24, toy_full_challenge_seed, toy_message_representative,
+    ChallengeMetadata, ChallengeMode, ChallengeRun, Transcript,
 };
 use crate::toy::{
-    ToyChallengeSignature, ToyParams, ToyPoly, ToyPublicKey, ToySigningKey, high_bits_vector,
-    reconstruct_w_approx, sample_ternary_challenge,
+    high_bits_vector, reconstruct_w_approx, sample_ternary_challenge, ToyChallengeSignature,
+    ToyParams, ToyPoly, ToyPublicKey, ToySigningKey,
 };
 
 const DEGREE: usize = 8;
@@ -118,8 +118,7 @@ struct CollisionOutcome {
 
 fn toy_signing_key(params: ToyParams) -> ToySigningKey {
     let a = ToyPoly::from_coeffs(params, [3, 1, 0, 2, 0, 1, 0, 4]).expect("length is valid");
-    let secret =
-        ToyPoly::from_coeffs(params, [1, -2, 2, 0, -1, 1, 0, 2]).expect("length is valid");
+    let secret = ToyPoly::from_coeffs(params, [1, -2, 2, 0, -1, 1, 0, 2]).expect("length is valid");
     let t = a.checked_mul(&secret).expect("matching toy params");
 
     ToySigningKey {
@@ -164,7 +163,10 @@ fn find_cross_message_collision(
         signed_candidates
             .entry((c, short_prefix_24(&c_tilde_full)))
             .or_default()
-            .push(ToyChallengeSignature { c_tilde: c_tilde_full, z });
+            .push(ToyChallengeSignature {
+                c_tilde: c_tilde_full,
+                z,
+            });
     }
 
     for z in random_bounded_polys(

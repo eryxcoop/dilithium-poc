@@ -146,6 +146,61 @@ exactly.
 `ExpandS` and secret-key decoding must keep `s₁` and `s₂` inside `[-η, η]`;
 otherwise `z` stops hiding the secret statistically.
 
+## gamma1_beta_boundary_oracle
+
+### Objective
+
+Recover a toy `s₁` from accepted signatures that should have been rejected by
+the `γ₁ - β` bound.
+
+### Bug
+
+The vulnerable signer checks only `||z||∞ < γ₁` instead of the ML-DSA-style
+margin `||z||∞ < γ₁ - β`.
+
+### Setup
+
+Toy params: `n = 6`, `η = 2`, `τ = 3`, `β = τ·η = 6`, and `γ₁ = 16`. Each
+signature has
+
+```text
+z = y + c·s₁
+```
+
+where `c` is sparse with `τ` nonzero coefficients in `{−1, 1}`. The attacker
+keeps only accepted signatures with at least one coordinate in the forbidden
+band:
+
+```text
+γ₁ - β ≤ |z_j| < γ₁
+```
+
+### Hint
+
+For a candidate secret `s`, compute `(c·s)_j` at each observed boundary
+coordinate. Since `z_j = y_j + (c·s)_j`, a candidate is plausible only when
+`y_j = z_j - (c·s)_j` could have come from the mask range and from the
+vulnerable acceptance event.
+
+Score candidates by boundary likelihood:
+
+```text
+score(s) = Σ log Pr[z_j is observed at the edge | (c·s)_j]
+```
+
+Then search over `s ∈ [-η, η]^n`.
+
+### Expected Result
+
+The transcript collects 128 boundary signatures and recovers the six
+coefficient toy secret exactly.
+
+### FIPS Defense
+
+The `γ₁ - β` margin removes the edge band. Since `||c·s₁||∞ ≤ β`, accepting
+only the inner range prevents the secret-dependent shift from deciding whether
+`z` appears near `±γ₁`.
+
 ## verifier_no_ctilde
 
 ### Objective

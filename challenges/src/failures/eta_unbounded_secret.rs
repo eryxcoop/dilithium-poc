@@ -1,7 +1,7 @@
 //! `eta_unbounded_secret`: wide secret coefficients leak through `z`.
 
 use crate::shared::{
-    ChallengeMetadata, ChallengeMode, ChallengeRun, SplitMix64, Transcript, rounded_prefix,
+    rounded_prefix, ChallengeMetadata, ChallengeMode, ChallengeRun, SplitMix64, Transcript,
 };
 
 const ETA: i64 = 2;
@@ -151,7 +151,11 @@ fn estimate_secret_f64(
     sums_when_challenge_one
         .iter()
         .zip(counts_when_challenge_one.iter())
-        .zip(sums_when_challenge_minus_one.iter().zip(counts_when_challenge_minus_one.iter()))
+        .zip(
+            sums_when_challenge_minus_one
+                .iter()
+                .zip(counts_when_challenge_minus_one.iter()),
+        )
         .map(|((&sum_pos, &count_pos), (&sum_neg, &count_neg))| {
             let mean_pos = sum_pos as f64 / count_pos as f64;
             let mean_neg = sum_neg as f64 / count_neg as f64;

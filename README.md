@@ -198,8 +198,8 @@ Recorded benchmark artifacts:
 ## Educational Challenges
 
 The `challenges/` directory is reserved for intentionally vulnerable examples:
-nonce reuse, broken samplers, missing verifier checks, permissive parsers, and
-toy parameter failures.
+nonce reuse, broken samplers, boundary leaks from bad `γ₁ - β` rejection,
+missing verifier checks, permissive parsers, and toy parameter failures.
 
 Challenge code lives in a separate workspace member named
 `dilithium-poc-challenges`. Harmless scaffolding, including toy algebra and the

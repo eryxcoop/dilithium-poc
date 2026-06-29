@@ -1,12 +1,12 @@
 //! `toy_dense_hint_forgery`: overweight hints forge a toy signature.
 
 use crate::shared::{
-    ChallengeMetadata, ChallengeMode, ChallengeRun, Transcript, sample_ternary_seed,
-    toy_u8_challenge_seed, toy_u8_message_representative,
+    sample_ternary_seed, toy_u8_challenge_seed, toy_u8_message_representative, ChallengeMetadata,
+    ChallengeMode, ChallengeRun, Transcript,
 };
 use crate::toy::{
-    ToyHintSignature, ToyParams, ToyPoly, ToyPublicKey, bits_from_mask, dense_hint_signing_key,
-    first_hint_positions, hint_weight, reconstruct_w_approx, use_hints,
+    bits_from_mask, dense_hint_signing_key, first_hint_positions, hint_weight,
+    reconstruct_w_approx, use_hints, ToyHintSignature, ToyParams, ToyPoly, ToyPublicKey,
 };
 
 const DEGREE: usize = 8;
@@ -27,7 +27,7 @@ pub fn run() -> ChallengeRun {
     let z_candidates = generate_z_candidates(params);
     let forgery =
         find_overweight_hint_forgery(&signing_key.public_key, message, context, &z_candidates)
-        .expect("deterministic search should find a toy forgery");
+            .expect("deterministic search should find a toy forgery");
 
     let strict_accepts = strict_verify(&signing_key.public_key, message, context, &forgery);
     let vulnerable_accepts =
