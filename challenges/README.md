@@ -18,6 +18,30 @@ and teachable, not to offer alternate ML-DSA APIs.
 - Use Unicode notation in explanations: `ρ`, `ρ′`, `ρ″`, `μ`, `c̃`, `Â`, `∞`,
   `η`, `τ`, `λ`, `γ₁`, `γ₂`, `β`, `ω`, `κ`.
 
+## Recommended Order
+
+This is the suggested student path, roughly from easiest to hardest:
+
+1. `toy_params_too_small`: start with exhaustive search in a tiny public
+   equation. It sets the tone without ML-DSA bookkeeping.
+2. `nonce_reuse`: learn the core cancellation trick in `z = y + c·s₁`.
+3. `eta_unbounded_secret`: use conditional averages to recover a secret that
+   escaped `[-η, η]`.
+4. `sampler_patterned_y`: separate mask bias from secret signal across many
+   samples.
+5. `gamma1_beta_boundary_oracle`: move from averages to edge events and recover
+   `s₁` from the forbidden `γ₁ - β` band.
+6. `gamma2_lowbits_boundary_oracle`: reuse the boundary-oracle idea on `r₀`,
+   with the sign flip needed to recover `s₂`.
+7. `gamma2_lowbits_pruned_recovery`: solve the larger `γ₂` version where
+   `5^20` brute force is infeasible and interval pruning is required.
+8. `verifier_no_ctilde`: switch from recovery to forgery by removing the final
+   Fiat-Shamir binding check.
+9. `lambda_too_short_cross_message`: turn a short `c̃` collision into a
+   cross-message forgery.
+10. `toy_dense_hint_forgery`: finish with the densest forgery challenge, where
+    hints, reconstructed high bits, and challenge binding interact.
+
 ## Safety Boundary
 
 Challenge code may intentionally violate FIPS 204, but only inside this
