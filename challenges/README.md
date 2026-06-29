@@ -60,6 +60,7 @@ The active challenge set is closed. This is the complete classroom catalog:
 | `eta_unbounded_secret` | Secrets outside `[-η, η]` become visible through averaged responses. |
 | `gamma1_beta_boundary_oracle` | Accepting the forbidden `γ₁ - β ≤ |z_j| < γ₁` band leaks `s₁`. |
 | `gamma2_lowbits_boundary_oracle` | Accepting low-bit edge values near `γ₂` leaks `s₂`. |
+| `gamma2_lowbits_pruned_recovery` | Larger low-bit edge recovery forces interval pruning over brute force. |
 | `verifier_no_ctilde` | Skipping `c̃ == H(μ || w1Encode(w₁′))` enables forgery. |
 | `lambda_too_short_cross_message` | Checking only 24 bits of `c̃` enables cross-message forgery. |
 | `toy_dense_hint_forgery` | Accepting hint weight beyond `ω` enables toy signature forgery. |

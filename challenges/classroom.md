@@ -18,10 +18,11 @@ This catalog is closed. The classroom set is exactly:
 3. `eta_unbounded_secret`
 4. `gamma1_beta_boundary_oracle`
 5. `gamma2_lowbits_boundary_oracle`
-6. `verifier_no_ctilde`
-7. `lambda_too_short_cross_message`
-8. `toy_dense_hint_forgery`
-9. `toy_params_too_small`
+6. `gamma2_lowbits_pruned_recovery`
+7. `verifier_no_ctilde`
+8. `lambda_too_short_cross_message`
+9. `toy_dense_hint_forgery`
+10. `toy_params_too_small`
 
 Do not treat other sketches, historical roadmap entries, or research notes as
 active challenge work unless the catalog is deliberately reopened.
@@ -281,6 +282,72 @@ coefficient toy `s₂` exactly.
 The `γ₂ - β` margin removes the low-bit edge band. Since `||c·s₂||∞ ≤ β`, the
 margin prevents the secret-dependent shift from deciding whether `r₀` sits
 near a rounding boundary.
+
+## gamma2_lowbits_pruned_recovery
+
+### Objective
+
+Recover a larger toy `s₂` from low-bit boundary observations without testing
+all candidates in `[-η, η]^n`.
+
+### Bug
+
+The vulnerable signer again checks only `||r₀||∞ < γ₂` instead of
+`||r₀||∞ < γ₂ - β`, releasing low-bit values in the forbidden edge band.
+
+### Setup
+
+Advanced toy params: `n = 20`, `η = 2`, `τ = 4`, `β = τ·η = 8`, and
+`γ₂ = 24`. A naive search would require
+
+```text
+(2η + 1)^n = 5^20
+```
+
+candidates, so the simple brute-force solution from `gamma2_lowbits_boundary_oracle`
+is no longer viable.
+
+### Hint
+
+Each observed edge coordinate still has
+
+```text
+r₀,j = noise_j - (c·s₂)_j
+```
+
+and therefore
+
+```text
+noise_j = r₀,j + (c·s₂)_j.
+```
+
+Since `noise_j ∈ [-(γ₂ - 1), γ₂ - 1]`, every edge gives an interval:
+
+```text
+-(γ₂ - 1) - r₀,j ≤ (c·s₂)_j ≤ (γ₂ - 1) - r₀,j.
+```
+
+During backtracking, if only part of `(c·s₂)_j` is assigned, bound the missing
+terms by `±η`:
+
+```text
+partial - missing·η ≤ (c·s₂)_j ≤ partial + missing·η.
+```
+
+If this interval does not intersect the allowed interval, prune the branch.
+After pruning, rank the remaining complete candidates by low-bit likelihood.
+
+### Expected Result
+
+The transcript collects 128 signatures, extracts hundreds of sparse interval
+constraints, visits only a tiny fraction of the `5^20` tree, and recovers the
+20-coefficient toy `s₂` exactly.
+
+### FIPS Defense
+
+The `γ₂ - β` rejection margin prevents the low-bit edge constraints from
+entering the transcript. Without those edge samples, there is no corridor to
+prune through.
 
 ## verifier_no_ctilde
 

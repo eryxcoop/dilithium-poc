@@ -3,13 +3,15 @@
 use dilithium_poc::ml_dsa::KeyPair;
 use dilithium_poc::params::ML_DSA_44;
 use dilithium_poc_challenges::exercises::{
-    boundary_accepted_mask_count, estimate_mask_bias_means, estimate_secret_from_biased_masks,
-    estimate_secret_from_unbounded_eta, forge_cross_message_with_short_lambda,
-    forge_signature_with_dense_hints, forge_signature_without_ctilde_binding,
-    lowbits_accepted_noise_count, lowbits_boundary_shift, lowbits_log_likelihood,
-    recover_secret_from_boundary_oracle, recover_secret_from_lowbits_oracle,
-    recover_secret_from_reused_mask, recover_toy_secret_by_search, z_boundary_cyclic_convolution,
-    z_boundary_log_likelihood, z_boundary_shift, BoundaryObservation, LowBitsObservation,
+    boundary_accepted_mask_count, constraint_remains_possible, estimate_mask_bias_means,
+    estimate_secret_from_biased_masks, estimate_secret_from_unbounded_eta,
+    forge_cross_message_with_short_lambda, forge_signature_with_dense_hints,
+    forge_signature_without_ctilde_binding, lowbits_accepted_noise_count, lowbits_boundary_shift,
+    lowbits_log_likelihood, partial_shift_range, recover_secret_from_boundary_oracle,
+    recover_secret_from_lowbits_oracle, recover_secret_from_reused_mask,
+    recover_secret_with_pruning, recover_toy_secret_by_search, z_boundary_cyclic_convolution,
+    z_boundary_log_likelihood, z_boundary_shift, BoundaryConstraint, BoundaryObservation,
+    LowBitsObservation, PrunedLowBitsObservation,
 };
 use dilithium_poc_challenges::shared::{
     sample_ternary_seed, toy_message_representative, toy_u8_challenge_seed,
@@ -102,6 +104,35 @@ fn gamma2_lowbits_exercise_helpers_explain_sign_flip() {
     assert_eq!(lowbits_boundary_shift(&challenge, &secret, 1), -3);
     assert_eq!(lowbits_accepted_noise_count(-3, 16), 28);
     assert!(lowbits_log_likelihood(-12, -3, 16).is_finite());
+}
+
+#[test]
+fn gamma2_lowbits_pruned_recovery_exercise_recovers_larger_s2() {
+    let secret = pruned_secret();
+    let observations = pruned_lowbits_observations(&secret, 128);
+
+    assert_eq!(recover_secret_with_pruning(&observations, 2, 24), secret);
+}
+
+#[test]
+fn gamma2_lowbits_pruned_helpers_explain_interval_pruning() {
+    let constraint = BoundaryConstraint {
+        terms: vec![(0, 1), (2, -1), (4, 1)],
+        lower: -1,
+        upper: 3,
+        r0: 20,
+    };
+    let mut assignment = vec![None; 5];
+    assignment[0] = Some(2);
+
+    assert_eq!(
+        partial_shift_range(&constraint.terms, &assignment, 2),
+        (2, 4)
+    );
+    assert!(constraint_remains_possible(&constraint, &assignment, 2));
+
+    assignment[0] = Some(-2);
+    assert!(!constraint_remains_possible(&constraint, &assignment, 2));
 }
 
 #[test]
@@ -281,6 +312,52 @@ fn lowbits_observations(secret: &[i64], target_count: usize) -> Vec<LowBitsObser
     }
 
     observations
+}
+
+fn pruned_lowbits_observations(
+    secret: &[i64],
+    target_count: usize,
+) -> Vec<PrunedLowBitsObservation> {
+    const TAU: usize = 4;
+    const GAMMA2: i64 = 24;
+    const BETA: i64 = 8;
+
+    let mut rng = SplitMix64::new(0x0000_0000_00ab_c123);
+    let mut observations = Vec::with_capacity(target_count);
+
+    while observations.len() < target_count {
+        let challenge = sparse_challenge(&mut rng, secret.len(), TAU);
+        let c_times_secret = cyclic_convolution(&challenge, secret);
+        let mut edge_r0 = vec![None; secret.len()];
+        let mut vulnerable_accepts = true;
+
+        for (index, &shift) in c_times_secret.iter().enumerate() {
+            let noise = rng.range((2 * GAMMA2 - 1) as u64) as i64 - (GAMMA2 - 1);
+            let r0 = noise - shift;
+            if r0.abs() >= GAMMA2 {
+                vulnerable_accepts = false;
+                break;
+            }
+            if r0.abs() >= GAMMA2 - BETA {
+                edge_r0[index] = Some(r0);
+            }
+        }
+
+        if vulnerable_accepts && edge_r0.iter().any(Option::is_some) {
+            observations.push(PrunedLowBitsObservation { challenge, edge_r0 });
+        }
+    }
+
+    observations
+}
+
+fn pruned_secret() -> Vec<i64> {
+    const ETA: i64 = 2;
+    const DEGREE: usize = 20;
+
+    (0..DEGREE)
+        .map(|index| (index as i64 * 7 + 3).rem_euclid(2 * ETA + 1) - ETA)
+        .collect()
 }
 
 fn sparse_challenge(rng: &mut SplitMix64, degree: usize, tau: usize) -> Vec<i64> {

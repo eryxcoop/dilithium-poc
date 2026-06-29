@@ -24,6 +24,7 @@ updated together:
 | `eta_unbounded_secret` | Let secret coefficients escape `[-η, η]` | Wide secrets leak through averaged `z` values |
 | `gamma1_beta_boundary_oracle` | Check `∥z∥∞ < γ₁` instead of `γ₁ - β` | Boundary-oracle recovery of `s₁` |
 | `gamma2_lowbits_boundary_oracle` | Check `∥r₀∥∞ < γ₂` instead of `γ₂ - β` | Low-bits boundary-oracle recovery of `s₂` |
+| `gamma2_lowbits_pruned_recovery` | Same `γ₂` bug at larger `n` | Interval-pruned recovery of `s₂` without `5^20` brute force |
 | `verifier_no_ctilde` | Skip `c̃ == H(μ || w1Encode(w₁′))` | Structural forgery when Fiat-Shamir binding is missing |
 | `lambda_too_short_cross_message` | Check only 24 bits of `c̃` | Cross-message forgery from short challenge output |
 | `toy_dense_hint_forgery` | Accept hint weight beyond `ω` | Toy forgery using overpowered hints |
@@ -38,10 +39,11 @@ The classroom order is intentional:
 3. `eta_unbounded_secret`
 4. `gamma1_beta_boundary_oracle`
 5. `gamma2_lowbits_boundary_oracle`
-6. `verifier_no_ctilde`
-7. `lambda_too_short_cross_message`
-8. `toy_dense_hint_forgery`
-9. `toy_params_too_small`
+6. `gamma2_lowbits_pruned_recovery`
+7. `verifier_no_ctilde`
+8. `lambda_too_short_cross_message`
+9. `toy_dense_hint_forgery`
+10. `toy_params_too_small`
 
 That order starts with direct algebra, moves through statistical leaks and
 boundary-oracle reasoning, then finishes with verifier/Fiat-Shamir failures and

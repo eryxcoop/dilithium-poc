@@ -2,8 +2,9 @@
 
 use dilithium_poc_challenges::failures::{
     challenge_runs, challenges_success, eta_unbounded_secret, gamma1_beta_boundary_oracle,
-    gamma2_lowbits_boundary_oracle, lambda_too_short_cross_message, nonce_reuse,
-    sampler_patterned_y, toy_dense_hint_forgery, toy_params_too_small, verifier_no_ctilde,
+    gamma2_lowbits_boundary_oracle, gamma2_lowbits_pruned_recovery, lambda_too_short_cross_message,
+    nonce_reuse, sampler_patterned_y, toy_dense_hint_forgery, toy_params_too_small,
+    verifier_no_ctilde,
 };
 
 #[test]
@@ -19,6 +20,7 @@ fn challenge_runs_are_available_in_catalog_order() {
             "eta_unbounded_secret",
             "gamma1_beta_boundary_oracle",
             "gamma2_lowbits_boundary_oracle",
+            "gamma2_lowbits_pruned_recovery",
             "verifier_no_ctilde",
             "lambda_too_short_cross_message",
             "toy_dense_hint_forgery",
@@ -36,6 +38,7 @@ fn challenge_transcripts_explain_bug_and_defense() {
         eta_unbounded_secret(),
         gamma1_beta_boundary_oracle(),
         gamma2_lowbits_boundary_oracle(),
+        gamma2_lowbits_pruned_recovery(),
         verifier_no_ctilde(),
         lambda_too_short_cross_message(),
         toy_dense_hint_forgery(),

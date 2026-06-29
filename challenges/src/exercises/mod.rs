@@ -13,6 +13,7 @@
 mod eta_unbounded_secret;
 mod gamma1_beta_boundary_oracle;
 mod gamma2_lowbits_boundary_oracle;
+mod gamma2_lowbits_pruned_recovery;
 mod lambda_too_short_cross_message;
 mod nonce_reuse;
 mod sampler_patterned_y;
@@ -31,6 +32,12 @@ pub use gamma2_lowbits_boundary_oracle::{
     accepted_noise_count as lowbits_accepted_noise_count, boundary_shift as lowbits_boundary_shift,
     cyclic_convolution as lowbits_cyclic_convolution, lowbits_log_likelihood,
     recover_secret_from_lowbits_oracle, LowBitsObservation,
+};
+pub use gamma2_lowbits_pruned_recovery::{
+    accepted_noise_count as pruned_lowbits_accepted_noise_count, constraint_remains_possible,
+    constraints_from_observations as pruned_constraints_from_observations,
+    lowbits_log_likelihood as pruned_lowbits_log_likelihood, partial_shift_range,
+    recover_secret_with_pruning, BoundaryConstraint, PrunedLowBitsObservation,
 };
 pub use lambda_too_short_cross_message::forge_cross_message_with_short_lambda;
 pub use nonce_reuse::recover_secret_from_reused_mask;

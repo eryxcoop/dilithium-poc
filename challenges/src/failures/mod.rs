@@ -5,6 +5,7 @@
 mod eta_unbounded_secret;
 mod gamma1_beta_boundary_oracle;
 mod gamma2_lowbits_boundary_oracle;
+mod gamma2_lowbits_pruned_recovery;
 mod lambda_too_short_cross_message;
 mod nonce_reuse;
 mod sampler_patterned_y;
@@ -17,6 +18,7 @@ use crate::shared::ChallengeRun;
 pub use eta_unbounded_secret::run as eta_unbounded_secret;
 pub use gamma1_beta_boundary_oracle::run as gamma1_beta_boundary_oracle;
 pub use gamma2_lowbits_boundary_oracle::run as gamma2_lowbits_boundary_oracle;
+pub use gamma2_lowbits_pruned_recovery::run as gamma2_lowbits_pruned_recovery;
 pub use lambda_too_short_cross_message::run as lambda_too_short_cross_message;
 pub use nonce_reuse::run as nonce_reuse;
 pub use sampler_patterned_y::run as sampler_patterned_y;
@@ -32,6 +34,7 @@ pub fn challenge_runs() -> Vec<ChallengeRun> {
         eta_unbounded_secret(),
         gamma1_beta_boundary_oracle(),
         gamma2_lowbits_boundary_oracle(),
+        gamma2_lowbits_pruned_recovery(),
         verifier_no_ctilde(),
         lambda_too_short_cross_message(),
         toy_dense_hint_forgery(),
