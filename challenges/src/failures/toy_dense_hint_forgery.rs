@@ -1,8 +1,12 @@
 //! `toy_dense_hint_forgery`: overweight hints forge a toy signature.
 
-use crate::shared::{ChallengeMetadata, ChallengeMode, ChallengeRun, Transcript};
+use crate::shared::{
+    ChallengeMetadata, ChallengeMode, ChallengeRun, Transcript, sample_ternary_seed,
+    toy_u8_challenge_seed, toy_u8_message_representative,
+};
 use crate::toy::{
-    ToyParams, ToyPoly, bits_from_mask, first_hint_positions, hint_weight, use_hints,
+    ToyHintSignature, ToyParams, ToyPoly, ToyPublicKey, bits_from_mask, dense_hint_signing_key,
+    first_hint_positions, hint_weight, reconstruct_w_approx, use_hints,
 };
 
 const DEGREE: usize = 8;
@@ -15,19 +19,21 @@ const CHALLENGE_MODULUS: u8 = 16;
 /// Runs a toy forgery demo that uses only overweight hints.
 pub fn run() -> ChallengeRun {
     let params = ToyParams::new(DEGREE, MODULUS).expect("toy params should be valid");
-    let public_key = toy_public_key(params);
+    let signing_key = dense_hint_signing_key(params);
     let message = b"classroom dense hint forgery";
     let context = b"classroom";
     let replay_message = b"different message";
-    let mu = toy_message_representative(message, context);
+    let mu = toy_u8_message_representative(message, context, CHALLENGE_MODULUS);
     let z_candidates = generate_z_candidates(params);
-    let forgery = find_overweight_hint_forgery(&public_key, message, context, &z_candidates)
+    let forgery =
+        find_overweight_hint_forgery(&signing_key.public_key, message, context, &z_candidates)
         .expect("deterministic search should find a toy forgery");
 
-    let strict_accepts = strict_verify(&public_key, message, context, &forgery);
-    let vulnerable_accepts = vulnerable_verify_without_omega(&public_key, message, context, &forgery);
+    let strict_accepts = strict_verify(&signing_key.public_key, message, context, &forgery);
+    let vulnerable_accepts =
+        vulnerable_verify_without_omega(&signing_key.public_key, message, context, &forgery);
     let replay_accepts =
-        vulnerable_verify_without_omega(&public_key, replay_message, context, &forgery);
+        vulnerable_verify_without_omega(&signing_key.public_key, replay_message, context, &forgery);
     let success = vulnerable_accepts && !strict_accepts && !replay_accepts;
 
     let transcript = Transcript::new()
@@ -35,7 +41,7 @@ pub fn run() -> ChallengeRun {
             "Setup",
             format!(
                 "Toy verifier uses n = {DEGREE}, q = {MODULUS}, gamma2 = {GAMMA2}, omega = {OMEGA}, and ||z||∞ < {Z_BOUND}. The attacker knows only the public pair (a, t1), with centered t1 = {:?}.",
-                public_key.t1.centered_coeffs()
+                signing_key.public_key.t.centered_coeffs()
             ),
         )
         .step(
@@ -88,36 +94,13 @@ pub fn run() -> ChallengeRun {
     )
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct ToyPublicKey {
-    a: ToyPoly,
-    t1: ToyPoly,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct ToySignature {
-    c_tilde: u8,
-    z: ToyPoly,
-    hints: Vec<bool>,
-    w_approx: ToyPoly,
-}
-
-fn toy_public_key(params: ToyParams) -> ToyPublicKey {
-    let a = ToyPoly::from_coeffs(params, [3, 0, 1, 4, 0, 2, 0, 1]).expect("length is valid");
-    let secret =
-        ToyPoly::from_coeffs(params, [2, -2, 1, 0, -1, 2, 1, 0]).expect("length is valid");
-    let t1 = a.checked_mul(&secret).expect("matching toy params");
-
-    ToyPublicKey { a, t1 }
-}
-
 fn find_overweight_hint_forgery(
     public_key: &ToyPublicKey,
     message: &[u8],
     context: &[u8],
     z_candidates: &[ToyPoly],
-) -> Option<ToySignature> {
-    let mu = toy_message_representative(message, context);
+) -> Option<ToyHintSignature> {
+    let mu = toy_u8_message_representative(message, context, CHALLENGE_MODULUS);
 
     for z in z_candidates {
         if z.infinity_norm() >= Z_BOUND {
@@ -125,7 +108,7 @@ fn find_overweight_hint_forgery(
         }
 
         for c_tilde in 0..CHALLENGE_MODULUS {
-            let c = sample_challenge(c_tilde);
+            let c = sample_ternary_seed(c_tilde);
             let w_approx = reconstruct_w_approx(public_key, z, c);
 
             for mask in 0usize..(1usize << DEGREE) {
@@ -135,8 +118,8 @@ fn find_overweight_hint_forgery(
                 }
 
                 let w1_prime = use_hints(&w_approx, &hints, GAMMA2);
-                if toy_challenge_seed(mu, &w1_prime) == c_tilde {
-                    return Some(ToySignature {
+                if toy_u8_challenge_seed(mu, &w1_prime, CHALLENGE_MODULUS) == c_tilde {
+                    return Some(ToyHintSignature {
                         c_tilde,
                         z: z.clone(),
                         hints,
@@ -154,7 +137,7 @@ fn strict_verify(
     public_key: &ToyPublicKey,
     message: &[u8],
     context: &[u8],
-    signature: &ToySignature,
+    signature: &ToyHintSignature,
 ) -> bool {
     if hint_weight(&signature.hints) > OMEGA {
         return false;
@@ -166,7 +149,7 @@ fn vulnerable_verify_without_omega(
     public_key: &ToyPublicKey,
     message: &[u8],
     context: &[u8],
-    signature: &ToySignature,
+    signature: &ToyHintSignature,
 ) -> bool {
     if signature.z.infinity_norm() >= Z_BOUND {
         return false;
@@ -175,17 +158,11 @@ fn vulnerable_verify_without_omega(
         return false;
     }
 
-    let mu = toy_message_representative(message, context);
-    let c = sample_challenge(signature.c_tilde);
+    let mu = toy_u8_message_representative(message, context, CHALLENGE_MODULUS);
+    let c = sample_ternary_seed(signature.c_tilde);
     let w_approx = reconstruct_w_approx(public_key, &signature.z, c);
     let w1_prime = use_hints(&w_approx, &signature.hints, GAMMA2);
-    toy_challenge_seed(mu, &w1_prime) == signature.c_tilde
-}
-
-fn reconstruct_w_approx(public_key: &ToyPublicKey, z: &ToyPoly, challenge: i64) -> ToyPoly {
-    let a_z = public_key.a.checked_mul(z).expect("matching toy params");
-    let c_t1 = public_key.t1.scalar_mul(challenge);
-    a_z.checked_sub(&c_t1).expect("matching toy params")
+    toy_u8_challenge_seed(mu, &w1_prime, CHALLENGE_MODULUS) == signature.c_tilde
 }
 
 fn generate_z_candidates(params: ToyParams) -> Vec<ToyPoly> {
@@ -233,32 +210,4 @@ fn rotate_pattern(pattern: [i64; DEGREE], shift: usize) -> [i64; DEGREE] {
         rotated[(index + shift) % DEGREE] = coefficient;
     }
     rotated
-}
-
-fn toy_message_representative(message: &[u8], context: &[u8]) -> u8 {
-    let weighted_sum = context
-        .iter()
-        .chain(core::iter::once(&b':'))
-        .chain(message.iter())
-        .enumerate()
-        .map(|(index, byte)| (index as u32 + 1) * (*byte as u32))
-        .sum::<u32>();
-    (weighted_sum % CHALLENGE_MODULUS as u32) as u8
-}
-
-fn toy_challenge_seed(mu: u8, w1: &[u8]) -> u8 {
-    let weighted_sum = w1
-        .iter()
-        .enumerate()
-        .map(|(index, value)| (index as u32 + 5) * (*value as u32))
-        .sum::<u32>();
-    ((mu as u32 + weighted_sum) % CHALLENGE_MODULUS as u32) as u8
-}
-
-fn sample_challenge(c_tilde: u8) -> i64 {
-    match c_tilde % 3 {
-        0 => -1,
-        1 => 0,
-        _ => 1,
-    }
 }

@@ -5,17 +5,19 @@
 //! change `q`, or violate ML-DSA parameter coupling; keeping those experiments
 //! in their own algebra prevents them from looking FIPS-compatible.
 
+mod fixtures;
 mod hints;
 mod params;
 mod poly;
 mod signatures;
 mod vector;
 
+pub use fixtures::{dense_hint_signing_key, short_lambda_signing_key};
 pub use hints::{bits_from_mask, decompose, first_hint_positions, hint_weight, use_hints};
 pub use params::{ToyAlgebraError, ToyParams};
 pub use poly::ToyPoly;
 pub use signatures::{
-    ToyChallengeSignature, ToyPublicKey, ToySigningKey, high_bits_vector, reconstruct_w_approx,
-    sample_ternary_challenge,
+    ToyChallengeSignature, ToyHintSignature, ToyPublicKey, ToySigningKey, high_bits_vector,
+    reconstruct_w_approx, sample_ternary_challenge,
 };
 pub use vector::ToyVector;

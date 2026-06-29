@@ -32,6 +32,19 @@ pub struct ToyChallengeSignature<const N: usize> {
     pub z: ToyPoly,
 }
 
+/// Simple `(c_tilde, z, hints, w_approx)` toy signature container for hint-based demos.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ToyHintSignature {
+    /// Small toy challenge seed.
+    pub c_tilde: u8,
+    /// Toy response polynomial.
+    pub z: ToyPoly,
+    /// Dense or sparse hint bits used by the demo.
+    pub hints: Vec<bool>,
+    /// Reconstructed toy `w_approx`.
+    pub w_approx: ToyPoly,
+}
+
 /// Reconstructs the toy analogue of `w_approx = a·z - c·t`.
 pub fn reconstruct_w_approx(public_key: &ToyPublicKey, z: &ToyPoly, challenge: i64) -> ToyPoly {
     let a_z = public_key.a.checked_mul(z).expect("matching toy params");

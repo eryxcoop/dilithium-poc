@@ -2,13 +2,20 @@
 
 use dilithium_poc::ml_dsa::KeyPair;
 use dilithium_poc::params::ML_DSA_44;
+use dilithium_poc_challenges::shared::{
+    SplitMix64, sample_ternary_seed, toy_message_representative, toy_u8_challenge_seed,
+    toy_u8_message_representative,
+};
 use dilithium_poc_challenges::exercises::{
     estimate_mask_bias_means, estimate_secret_from_biased_masks, estimate_secret_from_unbounded_eta,
     forge_cross_message_with_short_lambda, forge_signature_with_dense_hints,
     forge_signature_without_ctilde_binding, recover_secret_from_reused_mask,
     recover_toy_secret_by_search,
 };
-use dilithium_poc_challenges::toy::{ToyParams, ToyPoly, decompose, hint_weight, use_hints};
+use dilithium_poc_challenges::toy::{
+    ToyParams, ToyPoly, decompose, dense_hint_signing_key, hint_weight, short_lambda_signing_key,
+    use_hints,
+};
 
 type WideSecretObservations = (Vec<i64>, Vec<i64>, Vec<usize>, Vec<i64>, Vec<usize>);
 
@@ -93,7 +100,7 @@ fn wide_secret_observations() -> WideSecretObservations {
     let secret = (0..SECRET_COEFFICIENTS)
         .map(|index| (index as i64 * 19 + 7).rem_euclid(2 * SECRET_MAX_ABS + 1) - SECRET_MAX_ABS)
         .collect::<Vec<_>>();
-    let mut rng = ExerciseSplitMix64::new(0x7e7a_1234_d15a_b1a5);
+    let mut rng = SplitMix64::new(0x7e7a_1234_d15a_b1a5);
     let mut sums_pos = vec![0i64; SECRET_COEFFICIENTS];
     let mut counts_pos = vec![0usize; SECRET_COEFFICIENTS];
     let mut sums_neg = vec![0i64; SECRET_COEFFICIENTS];
@@ -133,7 +140,7 @@ fn biased_mask_observations() -> (Vec<i64>, Vec<Vec<i64>>, Vec<i64>, Vec<usize>)
     let secret = (0..SECRET_COEFFICIENTS)
         .map(|index| (index as i64 * 5 + 8).rem_euclid(2 * ETA + 1) - ETA)
         .collect::<Vec<_>>();
-    let mut rng = ExerciseSplitMix64::new(0x5eed_5eed_d15a_b1a5);
+    let mut rng = SplitMix64::new(0x5eed_5eed_d15a_b1a5);
     let mask_samples = (0..AUDIT_SAMPLES)
         .map(|_| {
             (0..SECRET_COEFFICIENTS)
@@ -168,21 +175,18 @@ fn toy_dense_hint_vulnerable_accepts(
     hints: &[bool],
 ) -> bool {
     let params = ToyParams::new(8, 97).unwrap();
-    let a = ToyPoly::from_coeffs(params, [3, 0, 1, 4, 0, 2, 0, 1]).unwrap();
-    let secret = ToyPoly::from_coeffs(params, [2, -2, 1, 0, -1, 2, 1, 0]).unwrap();
-    let t1 = a.checked_mul(&secret).unwrap();
-    let challenge = match c_tilde % 3 {
-        0 => -1,
-        1 => 0,
-        _ => 1,
-    };
-    let a_z = a.checked_mul(z).unwrap();
-    let c_t1 = t1.scalar_mul(challenge);
+    let signing_key = dense_hint_signing_key(params);
+    let challenge = sample_ternary_seed(c_tilde);
+    let a_z = signing_key.public_key.a.checked_mul(z).unwrap();
+    let c_t1 = signing_key.public_key.t.scalar_mul(challenge);
     let w_approx = a_z.checked_sub(&c_t1).unwrap();
     let w1_prime = use_hints(&w_approx, hints, 8);
 
-    toy_dense_hint_mu(message, context) == toy_dense_hint_mu(message, context)
-        && toy_dense_hint_ctilde(toy_dense_hint_mu(message, context), &w1_prime) == c_tilde
+    toy_u8_challenge_seed(
+        toy_u8_message_representative(message, context, 16),
+        &w1_prime,
+        16,
+    ) == c_tilde
         && z.infinity_norm() < 3
         && hints.len() == 8
 }
@@ -194,16 +198,10 @@ fn toy_short_lambda_vulnerable_accepts(
     z: &ToyPoly,
 ) -> bool {
     let params = ToyParams::new(8, 257).unwrap();
-    let a = ToyPoly::from_coeffs(params, [3, 1, 0, 2, 0, 1, 0, 4]).unwrap();
-    let secret = ToyPoly::from_coeffs(params, [1, -2, 2, 0, -1, 1, 0, 2]).unwrap();
-    let t = a.checked_mul(&secret).unwrap();
-    let challenge = match c_tilde_full[0] % 3 {
-        0 => -1,
-        1 => 0,
-        _ => 1,
-    };
-    let a_z = a.checked_mul(z).unwrap();
-    let c_t = t.scalar_mul(challenge);
+    let signing_key = short_lambda_signing_key(params);
+    let challenge = sample_ternary_seed(c_tilde_full[0]);
+    let a_z = signing_key.public_key.a.checked_mul(z).unwrap();
+    let c_t = signing_key.public_key.t.scalar_mul(challenge);
     let w_approx = a_z.checked_sub(&c_t).unwrap();
     let w1 = w_approx
         .coeffs()
@@ -211,45 +209,14 @@ fn toy_short_lambda_vulnerable_accepts(
         .map(|&coefficient| decompose(params, coefficient, 8).0)
         .collect::<Vec<_>>();
     let mut input = Vec::with_capacity(8 + w1.len());
-    input.extend_from_slice(&shake_mu(message, context));
+    input.extend_from_slice(&toy_message_representative(message, context));
     input.extend_from_slice(&w1);
     let digest = dilithium_poc::xof::shake256(&input, 4);
 
     z.infinity_norm() <= 5 && digest[..3] == c_tilde_full[..3]
 }
 
-fn shake_mu(message: &[u8], context: &[u8]) -> [u8; 8] {
-    let mut input = Vec::with_capacity(context.len() + 1 + message.len());
-    input.extend_from_slice(context);
-    input.push(b':');
-    input.extend_from_slice(message);
-    let digest = dilithium_poc::xof::shake256(&input, 8);
-    let mut mu = [0u8; 8];
-    mu.copy_from_slice(&digest);
-    mu
-}
-
-fn toy_dense_hint_mu(message: &[u8], context: &[u8]) -> u8 {
-    let weighted_sum = context
-        .iter()
-        .chain(core::iter::once(&b':'))
-        .chain(message.iter())
-        .enumerate()
-        .map(|(index, byte)| (index as u32 + 1) * (*byte as u32))
-        .sum::<u32>();
-    (weighted_sum % 16) as u8
-}
-
-fn toy_dense_hint_ctilde(mu: u8, w1: &[u8]) -> u8 {
-    let weighted_sum = w1
-        .iter()
-        .enumerate()
-        .map(|(index, value)| (index as u32 + 5) * (*value as u32))
-        .sum::<u32>();
-    ((mu as u32 + weighted_sum) % 16) as u8
-}
-
-fn exercise_biased_mask(rng: &mut ExerciseSplitMix64, index: usize) -> i64 {
+fn exercise_biased_mask(rng: &mut SplitMix64, index: usize) -> i64 {
     let roll = rng.range(10);
     match (index.is_multiple_of(2), roll) {
         (true, 0..=4) => 4,
@@ -262,31 +229,5 @@ fn exercise_biased_mask(rng: &mut ExerciseSplitMix64, index: usize) -> i64 {
         (false, 7) => 0,
         (false, 8) => 2,
         (false, _) => 4,
-    }
-}
-
-struct ExerciseSplitMix64 {
-    state: u64,
-}
-
-impl ExerciseSplitMix64 {
-    fn new(seed: u64) -> Self {
-        Self { state: seed }
-    }
-
-    fn next(&mut self) -> u64 {
-        self.state = self.state.wrapping_add(0x9e37_79b9_7f4a_7c15);
-        let mut value = self.state;
-        value = (value ^ (value >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
-        value = (value ^ (value >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
-        value ^ (value >> 31)
-    }
-
-    fn range(&mut self, upper: u64) -> u64 {
-        self.next() % upper
-    }
-
-    fn bit(&mut self) -> u8 {
-        (self.next() >> 63) as u8
     }
 }
