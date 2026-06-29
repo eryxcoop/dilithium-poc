@@ -8,6 +8,7 @@ pub mod phase1;
 
 pub use phase1::{
     estimate_mask_bias_means, estimate_secret_from_biased_masks,
+    estimate_secret_from_unbounded_eta, forge_signature_with_dense_hints,
     forge_signature_without_ctilde_binding, recover_secret_from_reused_mask,
     recover_toy_secret_by_search,
 };
