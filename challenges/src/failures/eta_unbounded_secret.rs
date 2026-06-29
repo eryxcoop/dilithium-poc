@@ -1,7 +1,7 @@
 //! `eta_unbounded_secret`: wide secret coefficients leak through `z`.
 
 use crate::shared::{
-    rounded_prefix, ChallengeMetadata, ChallengeMode, ChallengeRun, SplitMix64, Transcript,
+    ChallengeMetadata, ChallengeMode, ChallengeRun, SplitMix64, Transcript, rounded_prefix,
 };
 
 const ETA: i64 = 2;

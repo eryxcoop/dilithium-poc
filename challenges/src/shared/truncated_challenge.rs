@@ -6,7 +6,10 @@ use dilithium_poc::xof::shake256;
 pub const TOY_MESSAGE_REPRESENTATIVE_BYTES: usize = 8;
 
 /// Returns the toy message representative `μ = H(ctx || ':' || message)`.
-pub fn toy_message_representative(message: &[u8], context: &[u8]) -> [u8; TOY_MESSAGE_REPRESENTATIVE_BYTES] {
+pub fn toy_message_representative(
+    message: &[u8],
+    context: &[u8],
+) -> [u8; TOY_MESSAGE_REPRESENTATIVE_BYTES] {
     let mut input = Vec::with_capacity(context.len() + 1 + message.len());
     input.extend_from_slice(context);
     input.push(b':');

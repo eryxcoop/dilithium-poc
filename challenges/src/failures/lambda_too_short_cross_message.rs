@@ -1,12 +1,12 @@
 //! `lambda_too_short_cross_message`: a 24-bit challenge enables cross-message forgery.
 
 use crate::shared::{
-    random_bounded_polys, short_prefix_24, toy_full_challenge_seed, toy_message_representative,
-    ChallengeMetadata, ChallengeMode, ChallengeRun, Transcript,
+    ChallengeMetadata, ChallengeMode, ChallengeRun, Transcript, random_bounded_polys,
+    short_prefix_24, toy_full_challenge_seed, toy_message_representative,
 };
 use crate::toy::{
-    high_bits_vector, reconstruct_w_approx, sample_ternary_challenge, ToyChallengeSignature,
-    ToyParams, ToyPoly, ToyPublicKey, ToySigningKey,
+    ToyChallengeSignature, ToyParams, ToyPoly, ToyPublicKey, ToySigningKey, high_bits_vector,
+    reconstruct_w_approx, sample_ternary_challenge,
 };
 
 const DEGREE: usize = 8;

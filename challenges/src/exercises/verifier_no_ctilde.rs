@@ -24,7 +24,7 @@
 
 use dilithium_poc::hints::HintsVector;
 use dilithium_poc::ml_dsa::{PublicKey, Signature};
-use dilithium_poc::params::{ParameterSet, ML_DSA_44};
+use dilithium_poc::params::{ML_DSA_44, ParameterSet};
 use dilithium_poc::poly::PolyVector;
 
 /// Builds a signature for `message` and `context` that a verifier missing the

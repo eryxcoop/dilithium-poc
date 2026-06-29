@@ -1,7 +1,7 @@
 //! `sampler_patterned_y`: biased masks leak statistically.
 
 use crate::shared::{
-    rounded_prefix, ChallengeMetadata, ChallengeMode, ChallengeRun, SplitMix64, Transcript,
+    ChallengeMetadata, ChallengeMode, ChallengeRun, SplitMix64, Transcript, rounded_prefix,
 };
 
 const ETA: i64 = 4;

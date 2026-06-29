@@ -1,12 +1,12 @@
 //! `toy_dense_hint_forgery`: overweight hints forge a toy signature.
 
 use crate::shared::{
-    sample_ternary_seed, toy_u8_challenge_seed, toy_u8_message_representative, ChallengeMetadata,
-    ChallengeMode, ChallengeRun, Transcript,
+    ChallengeMetadata, ChallengeMode, ChallengeRun, Transcript, sample_ternary_seed,
+    toy_u8_challenge_seed, toy_u8_message_representative,
 };
 use crate::toy::{
-    bits_from_mask, dense_hint_signing_key, first_hint_positions, hint_weight,
-    reconstruct_w_approx, use_hints, ToyHintSignature, ToyParams, ToyPoly, ToyPublicKey,
+    ToyHintSignature, ToyParams, ToyPoly, ToyPublicKey, bits_from_mask, dense_hint_signing_key,
+    first_hint_positions, hint_weight, reconstruct_w_approx, use_hints,
 };
 
 const DEGREE: usize = 8;

@@ -9,7 +9,9 @@ mod truncated_challenge;
 
 pub use rng::SplitMix64;
 pub use stats::rounded_prefix;
-pub use toy_challenge::{sample_ternary_seed, toy_u8_challenge_seed, toy_u8_message_representative};
+pub use toy_challenge::{
+    sample_ternary_seed, toy_u8_challenge_seed, toy_u8_message_representative,
+};
 pub use toy_search::random_bounded_polys;
 pub use transcript::{ChallengeMetadata, ChallengeMode, ChallengeRun, Transcript, TranscriptStep};
 pub use truncated_challenge::{

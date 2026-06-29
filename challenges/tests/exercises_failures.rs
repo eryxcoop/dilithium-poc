@@ -3,6 +3,7 @@
 use dilithium_poc::ml_dsa::KeyPair;
 use dilithium_poc::params::ML_DSA_44;
 use dilithium_poc_challenges::exercises::{
+    BoundaryConstraint, BoundaryObservation, LowBitsObservation, PrunedLowBitsObservation,
     boundary_accepted_mask_count, constraint_remains_possible, estimate_mask_bias_means,
     estimate_secret_from_biased_masks, estimate_secret_from_unbounded_eta,
     forge_cross_message_with_short_lambda, forge_signature_with_dense_hints,
@@ -10,16 +11,15 @@ use dilithium_poc_challenges::exercises::{
     lowbits_log_likelihood, partial_shift_range, recover_secret_from_boundary_oracle,
     recover_secret_from_lowbits_oracle, recover_secret_from_reused_mask,
     recover_secret_with_pruning, recover_toy_secret_by_search, z_boundary_cyclic_convolution,
-    z_boundary_log_likelihood, z_boundary_shift, BoundaryConstraint, BoundaryObservation,
-    LowBitsObservation, PrunedLowBitsObservation,
+    z_boundary_log_likelihood, z_boundary_shift,
 };
 use dilithium_poc_challenges::shared::{
-    sample_ternary_seed, toy_message_representative, toy_u8_challenge_seed,
-    toy_u8_message_representative, SplitMix64,
+    SplitMix64, sample_ternary_seed, toy_message_representative, toy_u8_challenge_seed,
+    toy_u8_message_representative,
 };
 use dilithium_poc_challenges::toy::{
-    decompose, dense_hint_signing_key, hint_weight, short_lambda_signing_key, use_hints, ToyParams,
-    ToyPoly,
+    ToyParams, ToyPoly, decompose, dense_hint_signing_key, hint_weight, short_lambda_signing_key,
+    use_hints,
 };
 
 type WideSecretObservations = (Vec<i64>, Vec<i64>, Vec<usize>, Vec<i64>, Vec<usize>);
